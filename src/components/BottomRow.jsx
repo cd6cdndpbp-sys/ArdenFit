@@ -5,6 +5,14 @@ import TrainingPlanCard from './TrainingPlanCard'
 
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
+const REST_DAY_STRETCHES = [
+  { name: 'Hip Flexor Stretch',       duration: '30s each side' },
+  { name: 'Seated Hamstring Stretch', duration: '30s each side' },
+  { name: 'Doorway Chest Stretch',    duration: '30s' },
+  { name: 'Seated Spinal Twist',      duration: '30s each side' },
+  { name: 'Calf Stretch',             duration: '30s each side' },
+]
+
 const cardStyle = (theme) => ({
   background:   theme.cardBg,
   border:       `0.5px solid ${theme.cardBorder}`,
@@ -42,7 +50,7 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
   const pills = ['Glute bridges', 'Dead bug', 'Hip hinge', 'Band abduction']
 
   return (
-    <div style={{ ...cardStyle(theme), display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div style={{ ...cardStyle(theme), display: 'flex', flexDirection: 'column', gap: '6px' }}>
       <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </div>
@@ -69,6 +77,27 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
               {todaysPlan.nutritionNote}
             </div>
           )}
+          <div style={{ marginTop: '12px' }}>
+            <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+              Today's Stretches
+            </div>
+            {REST_DAY_STRETCHES.map((stretch, i) => (
+              <div key={i} style={{
+                display:        'flex',
+                justifyContent: 'space-between',
+                alignItems:     'center',
+                padding:        '6px 0',
+                borderBottom:   i < REST_DAY_STRETCHES.length - 1 ? `0.5px solid ${theme.cardBorder}` : 'none',
+              }}>
+                <span style={{ fontSize: '13px', color: theme.textPrimary }}>
+                  {stretch.name}
+                </span>
+                <span style={{ fontSize: '12px', color: theme.textMuted, background: theme.bgSecondary, padding: '2px 8px', borderRadius: '20px' }}>
+                  {stretch.duration}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -116,7 +145,7 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
 
       {/* Intensity bar — hidden on rest days */}
       {!isRest && (
-        <div style={{ marginTop: '12px' }}>
+        <div>
           <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
             Today's Intensity
           </div>
@@ -136,7 +165,7 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
       )}
 
       {/* Coach note */}
-      <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '10px' }}>
+      <div style={{ fontSize: '11px', color: theme.textMuted }}>
         {decision?.reasons?.[0] ?? 'HRV trending up. Sleep was solid. Green light.'}
       </div>
 
@@ -145,7 +174,6 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
         onClick={() => navigate('/workout')}
         style={{
           width: '100%',
-          marginTop: '12px',
           padding: '8px',
           background: 'transparent',
           border: `0.5px solid ${theme.accent}`,
