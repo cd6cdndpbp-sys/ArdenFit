@@ -121,7 +121,7 @@ export default function DashboardHeader({
         </span>
       </div>
 
-      <div style={styles.topRight}>
+      <div style={styles.topRight} className="header-topright">
         <p style={styles.time}>{currentTime}</p>
         <p style={styles.date}>{currentDate}</p>
       </div>
@@ -130,6 +130,7 @@ export default function DashboardHeader({
       <img
         src={ARDEN_IMAGES[ardenState] || ARDEN_IMAGES.rest}
         alt="Arden"
+        className="arden-img"
         style={{
           position: 'absolute',
           right: '-10px',
