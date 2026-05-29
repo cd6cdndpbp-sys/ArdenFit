@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react'
+
 const ARDEN_IMAGES = {
   rest:           'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS3.png',
   ready:          'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS1.png',
@@ -73,15 +75,25 @@ const fadeMask = [
   'linear-gradient(to bottom, transparent 0%, black 45%, black 100%)',
 ].join(', ')
 
+const getTime = () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+const getDate = () => new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
+
 export default function DashboardHeader({
   userName,
   timeOfDay,
   subtitle,
   tomorrowWorkout,
   ardenState,
-  currentTime,
-  currentDate,
 }) {
+  const [currentTime, setCurrentTime] = useState(getTime)
+  const [currentDate, setCurrentDate] = useState(getDate)
+
+  useEffect(() => {
+    const tick = () => { setCurrentTime(getTime()); setCurrentDate(getDate()) }
+    const id = setInterval(tick, 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
   console.log('ARDEN KEY:', ardenState, '| URL:', ARDEN_IMAGES[ardenState])
 
   return (
