@@ -90,6 +90,7 @@ export default function DashboardHeader({
   subtitle,
   tomorrowWorkout,
   ardenState,
+  theme,
 }) {
   const [currentTime, setCurrentTime] = useState(getTime)
   const [currentDate, setCurrentDate] = useState(getDate)
@@ -104,11 +105,11 @@ export default function DashboardHeader({
   console.log('ARDEN KEY:', ardenState, '| URL:', ARDEN_IMAGES[ardenState])
 
   return (
-    <header style={styles.header}>
+    <header style={{ ...styles.header, background: theme.bg, transition: 'background-color 2s ease' }}>
       <div style={styles.left}>
         <p style={styles.greeting}>Good {timeOfDay}, {userName}</p>
         <p style={styles.subtitle}>{subtitle}</p>
-        <span style={styles.pill}>
+        <span style={{ ...styles.pill, background: theme.accentBg, border: `0.5px solid ${theme.accent}`, color: theme.accentText, transition: 'background-color 1.5s ease, border-color 1.5s ease, color 1.5s ease' }}>
           ⚡ {tomorrowWorkout}
         </span>
       </div>

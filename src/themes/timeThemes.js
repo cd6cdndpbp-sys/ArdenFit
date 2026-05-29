@@ -1,0 +1,83 @@
+const themes = {
+  morning: {   // 5-11
+    name: 'morning',
+    bg: '#1a1408',
+    bgSecondary: '#241c0e',
+    cardBg: '#1e1810',
+    cardBorder: '#332a1a',
+    accent: '#f0a030',
+    accentBg: '#3d2a0a',
+    accentText: '#f0a030',
+    textPrimary: '#fff',
+    textSecondary: '#a08060',
+    textMuted: '#6b5540',
+    sparklineHR: '#f0a030',
+    sparklineHRV: '#e8c060',
+    badgeGood: { bg: '#3d2a0a', color: '#f0a030' },
+    badgeNormal: { bg: '#1a2a1a', color: '#60b060' },
+    badgeWarn: { bg: '#3d1a0a', color: '#e06030' },
+  },
+  afternoon: {  // 12-16
+    name: 'afternoon',
+    bg: '#0e1520',
+    bgSecondary: '#121c2a',
+    cardBg: '#131a24',
+    cardBorder: '#1e2d3d',
+    accent: '#4a9edd',
+    accentBg: '#0a1f3a',
+    accentText: '#4a9edd',
+    textPrimary: '#fff',
+    textSecondary: '#6a8aaa',
+    textMuted: '#445566',
+    sparklineHR: '#4a9edd',
+    sparklineHRV: '#3ecf8e',
+    badgeGood: { bg: '#0f3d2e', color: '#3ecf8e' },
+    badgeNormal: { bg: '#1a2a3a', color: '#4a9edd' },
+    badgeWarn: { bg: '#3d2a0a', color: '#f0a030' },
+  },
+  evening: {   // 17-21
+    name: 'evening',
+    bg: '#0e0e10',
+    bgSecondary: '#121214',
+    cardBg: '#18181c',
+    cardBorder: '#2a2a2e',
+    accent: '#3ecf8e',
+    accentBg: '#0f3d2e',
+    accentText: '#3ecf8e',
+    textPrimary: '#fff',
+    textSecondary: '#888',
+    textMuted: '#555',
+    sparklineHR: '#4a9edd',
+    sparklineHRV: '#3ecf8e',
+    badgeGood: { bg: '#0f3d2e', color: '#3ecf8e' },
+    badgeNormal: { bg: '#1a2a3a', color: '#4a9edd' },
+    badgeWarn: { bg: '#3d2a0a', color: '#f0a030' },
+  },
+  night: {     // 22-4
+    name: 'night',
+    bg: '#080810',
+    bgSecondary: '#0c0c18',
+    cardBg: '#10101a',
+    cardBorder: '#1e1e2e',
+    accent: '#a78bfa',
+    accentBg: '#1e1040',
+    accentText: '#a78bfa',
+    textPrimary: '#e8e8ff',
+    textSecondary: '#6060a0',
+    textMuted: '#404060',
+    sparklineHR: '#a78bfa',
+    sparklineHRV: '#7c6cd0',
+    badgeGood: { bg: '#1e1040', color: '#a78bfa' },
+    badgeNormal: { bg: '#101030', color: '#6080d0' },
+    badgeWarn: { bg: '#301020', color: '#d060a0' },
+  },
+}
+
+export function getTimeTheme(hour) {
+  if (hour >= 5  && hour < 12) return themes.morning
+  if (hour >= 12 && hour < 17) return themes.afternoon
+  if (hour >= 17 && hour < 22) return themes.evening
+  return themes.night
+}
+
+export default themes
