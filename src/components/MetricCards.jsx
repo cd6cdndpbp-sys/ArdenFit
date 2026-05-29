@@ -10,9 +10,10 @@ const FALLBACK = {
 const STEPS_GOAL = 8000
 
 const badgeStyles = {
-  good:   { background: '#0f3d2e', color: '#3ecf8e' },
-  normal: { background: '#1a2a3a', color: '#4a9edd' },
-  warn:   { background: '#3d2a0a', color: '#f0a030' },
+  good:     { background: '#0f3d2e', color: '#3ecf8e' },
+  normal:   { background: '#1a2a3a', color: '#4a9edd' },
+  warn:     { background: '#3d2a0a', color: '#f0a030' },
+  critical: { background: '#3d0f0f', color: '#e05555' },
 }
 
 const badge = (label, variant) => (
@@ -49,9 +50,10 @@ const minsToHm = (mins) => {
 
 function sleepBadge(hrs) {
   if (hrs == null) return ['--', 'normal']
-  if (hrs >= 7) return ['GOOD', 'good']
-  if (hrs >= 6) return ['OK', 'normal']
-  return ['LOW', 'warn']
+  if (hrs >= 7)   return ['GOOD',     'good']
+  if (hrs >= 6)   return ['OK',       'normal']
+  if (hrs >= 5)   return ['LOW',      'warn']
+  return                 ['CRITICAL', 'critical']
 }
 
 function trendPoints(values) {

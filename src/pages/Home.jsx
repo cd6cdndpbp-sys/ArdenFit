@@ -11,7 +11,6 @@ function Home() {
       <div style={{ maxWidth: '1100px', margin: '0 auto', background: '#0e0e10', minHeight: '100vh' }}>
         <DashboardHeader
           userName="Joma"
-          timeOfDay="evening"
           subtitle="Rest day. You've earned it."
           tomorrowWorkout="Tomorrow: lower body + core"
           ardenState="rest"

@@ -77,19 +77,26 @@ const fadeMask = [
 
 const getTime = () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 const getDate = () => new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
+const getTimeOfDay = () => {
+  const h = new Date().getHours()
+  if (h >= 5  && h < 12) return 'morning'
+  if (h >= 12 && h < 17) return 'afternoon'
+  if (h >= 17 && h < 24) return 'evening'
+  return 'night'
+}
 
 export default function DashboardHeader({
   userName,
-  timeOfDay,
   subtitle,
   tomorrowWorkout,
   ardenState,
 }) {
   const [currentTime, setCurrentTime] = useState(getTime)
   const [currentDate, setCurrentDate] = useState(getDate)
+  const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay)
 
   useEffect(() => {
-    const tick = () => { setCurrentTime(getTime()); setCurrentDate(getDate()) }
+    const tick = () => { setCurrentTime(getTime()); setCurrentDate(getDate()); setTimeOfDay(getTimeOfDay()) }
     const id = setInterval(tick, 60 * 1000)
     return () => clearInterval(id)
   }, [])
