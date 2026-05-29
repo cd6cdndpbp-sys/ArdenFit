@@ -22,7 +22,13 @@ function Home() {
           theme={theme}
         />
         <MetricCards healthData={loading ? null : healthData} theme={theme} />
-        <BottomRow theme={theme} decision={decision} />
+        <BottomRow
+          theme={theme}
+          decision={decision}
+          streak={healthData?.streak}
+          activeEnergyToday={healthData?.activeEnergyToday}
+          respiratoryRate={healthData?.respiratoryRate}
+        />
       </div>
     </main>
   )

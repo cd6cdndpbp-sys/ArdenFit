@@ -1,7 +1,9 @@
 export function runDecisionEngine(healthData) {
   if (!healthData) return null
 
-  const { sleep, restingHR, hrv, hrTrend, hrvTrend, steps } = healthData
+  const { sleep, restingHR, hrv, hrTrend, hrvTrend,
+          activeEnergyYesterday, exerciseToday, streak,
+          respiratoryRate, hrSevenDayAvg } = healthData
 
   const result = {
     ardenState: 'ready',
@@ -51,11 +53,20 @@ export function runDecisionEngine(healthData) {
     result.reasons.push(`${sleepHrs}h sleep — moderate intensity only`)
   }
 
+  // ── HARD SESSION YESTERDAY ───────────────────────────────
+  if (activeEnergyYesterday > 600) {
+    result.flags.push('HARD_YESTERDAY')
+    result.reasons.push(`High active energy yesterday (${activeEnergyYesterday} kcal) — factor in recovery`)
+    if (sleep?.total < 7) {
+      result.intensity = Math.max(1, result.intensity - 2)
+      result.reasons.push('Hard session yesterday + reduced sleep — backing off intensity')
+    }
+  }
+
   // ── RESTING HR CHECK ─────────────────────────────────────
   if (hrTrend && hrTrend.length >= 3) {
-    const sevenDayAvg = hrTrend.reduce((a, b) => a + b, 0) / hrTrend.length
-    const currentHR = restingHR
-    const elevatedPct = ((currentHR - sevenDayAvg) / sevenDayAvg) * 100
+    const sevenDayAvg = hrSevenDayAvg || restingHR
+    const elevatedPct = ((restingHR - sevenDayAvg) / sevenDayAvg) * 100
 
     if (elevatedPct >= 10) {
       result.ardenState = 'overtraining'
@@ -88,6 +99,21 @@ export function runDecisionEngine(healthData) {
       result.subtitle = 'HRV up, sleep solid. Green light — push today.'
       result.todayPlan = 'Full intensity'
     }
+  }
+
+  // ── RESPIRATORY RATE CHECK ───────────────────────────────
+  if (respiratoryRate) {
+    if (respiratoryRate > 18) {
+      result.flags.push('ELEVATED_RESPIRATORY')
+      result.intensity = Math.max(1, result.intensity - 2)
+      result.reasons.push(`Elevated respiratory rate (${respiratoryRate} br/min) — possible stress or illness`)
+    }
+  }
+
+  // ── STREAK BONUS ─────────────────────────────────────────
+  if (streak >= 3 && result.intensity >= 7) {
+    result.flags.push('ON_A_STREAK')
+    result.reasons.push(`${streak} day streak — consistency is building something`)
   }
 
   // ── FINAL STATE ASSIGNMENT ───────────────────────────────

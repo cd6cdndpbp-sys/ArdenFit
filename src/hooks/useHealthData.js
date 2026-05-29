@@ -32,6 +32,54 @@ const useHealthData = () => {
         const hrTrend = restingHR?.data?.slice(-7).map(d => d.qty) || []
         const hrvTrend = hrv?.data?.slice(-7).map(d => d.qty) || []
 
+        const activeEnergy = getMetric('active_energy')
+        const activEnergyToday = activeEnergy?.data
+          ?.filter(d => d.date?.startsWith(today))
+          ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
+
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        const activeEnergyYesterday = activeEnergy?.data
+          ?.filter(d => d.date?.startsWith(yesterdayStr))
+          ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
+
+        const exerciseMinutes = getMetric('apple_exercise_time')
+        const exerciseToday = exerciseMinutes?.data
+          ?.filter(d => d.date?.startsWith(today))
+          ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
+
+        const exerciseLast7 = []
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          const dateStr = d.toISOString().split('T')[0]
+          const dayMins = exerciseMinutes?.data
+            ?.filter(e => e.date?.startsWith(dateStr))
+            ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
+          exerciseLast7.push({ date: dateStr, mins: Math.round(dayMins) })
+        }
+
+        let streak = 0
+        for (let i = exerciseLast7.length - 2; i >= 0; i--) {
+          if (exerciseLast7[i].mins >= 5) streak++
+          else break
+        }
+
+        const respiratoryRate = getMetric('respiratory_rate')
+        const respiratoryRateValue = respiratoryRate?.data
+          ?.[respiratoryRate.data.length - 1]?.qty || null
+        const respiratoryTrend = respiratoryRate?.data?.slice(-7).map(d => d.qty) || []
+
+        const hrSevenDayAvg = hrTrend.length > 0
+          ? Math.round(hrTrend.reduce((a, b) => a + b, 0) / hrTrend.length)
+          : null
+
+        const walkingDistance = getMetric('walking_running_distance')
+        const distanceToday = walkingDistance?.data
+          ?.filter(d => d.date?.startsWith(today))
+          ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
+
         setHealthData({
           sleep: {
             total: sleepData?.totalSleep ? Math.round(sleepData.totalSleep * 10) / 10 : null,
@@ -45,6 +93,15 @@ const useHealthData = () => {
           hrv: hrvValue != null ? Math.round(hrvValue) : null,
           hrvTrend,
           steps: Math.round(stepsToday),
+          activeEnergyToday: Math.round(activEnergyToday),
+          activeEnergyYesterday: Math.round(activeEnergyYesterday),
+          exerciseToday: Math.round(exerciseToday),
+          exerciseLast7,
+          streak,
+          respiratoryRate: respiratoryRateValue ? Math.round(respiratoryRateValue * 10) / 10 : null,
+          respiratoryTrend,
+          hrSevenDayAvg,
+          distanceToday: Math.round(distanceToday * 10) / 10,
         })
       } catch (err) {
         console.error('Failed to fetch health data:', err)

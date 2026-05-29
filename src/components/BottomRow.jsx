@@ -9,11 +9,19 @@ const cardStyle = (theme) => ({
 })
 
 function TomorrowCard({ theme, decision }) {
+  const now  = new Date()
+  const hour = now.getHours()
+  const isToday = hour >= 5
+  const nextWorkoutDate = new Date(now)
+  nextWorkoutDate.setDate(now.getDate() + (isToday ? 0 : 1))
+  const dayName = nextWorkoutDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()
+  const label = isToday ? `TODAY · ${dayName}` : `TOMORROW · ${dayName}`
+
   const pills = ['Glute bridges', 'Dead bug', 'Hip hinge', 'Band abduction']
   return (
     <div style={cardStyle(theme)}>
       <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        TOMORROW · FRIDAY
+        {label}
       </div>
       <div style={{ fontSize: '20px', fontWeight: 600, color: theme.accent, marginTop: '6px', transition: 'color 1.5s ease' }}>
         Lower body + core
@@ -43,12 +51,13 @@ function TomorrowCard({ theme, decision }) {
   )
 }
 
-function ThisWeekCard({ theme }) {
+function ThisWeekCard({ theme, streak, activeEnergyToday }) {
   const stats = [
-    { label: 'Workouts',  value: '3 of 5', color: theme.textPrimary },
-    { label: 'Avg sleep', value: '5.7h ↓', color: '#f0a030'        },
-    { label: 'Avg steps', value: '3,188',  color: theme.textPrimary },
-    { label: 'Streak',    value: '0d',     color: theme.textPrimary },
+    { label: 'Workouts',    value: '3 of 5',                                             color: theme.textPrimary },
+    { label: 'Avg sleep',   value: '5.7h ↓',                                             color: '#f0a030'        },
+    { label: 'Avg steps',   value: '3,188',                                              color: theme.textPrimary },
+    { label: 'Streak',      value: streak != null ? `${streak}d` : '--',                 color: theme.textPrimary },
+    { label: 'Active kcal', value: activeEnergyToday != null ? `${activeEnergyToday} kcal` : '--', color: theme.accent },
   ]
   return (
     <div style={cardStyle(theme)}>
@@ -116,7 +125,7 @@ function RaceCard({ theme }) {
   )
 }
 
-export default function BottomRow({ theme, decision }) {
+export default function BottomRow({ theme, decision, streak, activeEnergyToday, respiratoryRate }) {
   return (
     <div style={{
       display: 'grid',
@@ -125,7 +134,7 @@ export default function BottomRow({ theme, decision }) {
       padding: '0 14px 14px',
     }}>
       <TomorrowCard theme={theme} decision={decision} />
-      <ThisWeekCard theme={theme} />
+      <ThisWeekCard theme={theme} streak={streak} activeEnergyToday={activeEnergyToday} />
       <RaceCard     theme={theme} />
     </div>
   )
