@@ -3,23 +3,26 @@ import MetricCards from '../components/MetricCards'
 import BottomRow from '../components/BottomRow'
 import useHealthData from '../hooks/useHealthData'
 import useTheme from '../hooks/useTheme'
+import { runDecisionEngine } from '../utils/decisionEngine'
 
 function Home() {
   const { healthData, loading } = useHealthData()
   const theme = useTheme()
+  const decision = runDecisionEngine(healthData)
+  console.log('decision:', decision)
 
   return (
     <main style={{ background: theme.bg, minHeight: '100vh', transition: 'background-color 2s ease' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto', background: theme.bg, minHeight: '100vh', transition: 'background-color 2s ease' }}>
         <DashboardHeader
           userName="Joma"
-          subtitle="Rest day. You've earned it."
-          tomorrowWorkout="Tomorrow: lower body + core"
-          ardenState="rest"
+          subtitle={decision?.subtitle ?? 'Loading...'}
+          tomorrowWorkout={decision?.tomorrowWorkout ?? 'Check back tomorrow'}
+          ardenState={decision?.ardenState ?? 'rest'}
           theme={theme}
         />
         <MetricCards healthData={loading ? null : healthData} theme={theme} />
-        <BottomRow theme={theme} />
+        <BottomRow theme={theme} decision={decision} />
       </div>
     </main>
   )

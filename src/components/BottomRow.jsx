@@ -8,7 +8,7 @@ const cardStyle = (theme) => ({
   transition:   CARD_TRANSITION,
 })
 
-function TomorrowCard({ theme }) {
+function TomorrowCard({ theme, decision }) {
   const pills = ['Glute bridges', 'Dead bug', 'Hip hinge', 'Band abduction']
   return (
     <div style={cardStyle(theme)}>
@@ -37,7 +37,7 @@ function TomorrowCard({ theme }) {
         ))}
       </div>
       <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '10px' }}>
-        HRV trending up. Sleep was solid. Green light.
+        {decision?.reasons?.[0] ?? 'HRV trending up. Sleep was solid. Green light.'}
       </div>
     </div>
   )
@@ -116,7 +116,7 @@ function RaceCard({ theme }) {
   )
 }
 
-export default function BottomRow({ theme }) {
+export default function BottomRow({ theme, decision }) {
   return (
     <div style={{
       display: 'grid',
@@ -124,7 +124,7 @@ export default function BottomRow({ theme }) {
       gap: '10px',
       padding: '0 14px 14px',
     }}>
-      <TomorrowCard theme={theme} />
+      <TomorrowCard theme={theme} decision={decision} />
       <ThisWeekCard theme={theme} />
       <RaceCard     theme={theme} />
     </div>
