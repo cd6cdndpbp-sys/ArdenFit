@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
 const cardStyle = (theme) => ({
@@ -9,6 +11,7 @@ const cardStyle = (theme) => ({
 })
 
 function TomorrowCard({ theme, decision }) {
+  const navigate = useNavigate()
   const now  = new Date()
   const hour = now.getHours()
   const isToday = hour >= 5
@@ -47,6 +50,25 @@ function TomorrowCard({ theme, decision }) {
       <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '10px' }}>
         {decision?.reasons?.[0] ?? 'HRV trending up. Sleep was solid. Green light.'}
       </div>
+      <button
+        onClick={() => navigate('/workout')}
+        style={{
+          display: 'block',
+          width: '100%',
+          marginTop: '12px',
+          padding: '8px',
+          background: 'transparent',
+          border: `0.5px solid ${theme.accent}`,
+          borderRadius: '8px',
+          color: theme.accent,
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'border-color 1.5s ease, color 1.5s ease',
+        }}
+      >
+        → Start Workout
+      </button>
     </div>
   )
 }
