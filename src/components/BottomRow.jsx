@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { getNextRace, getDaysUntil, getProgressPercent } from '../utils/raceManager'
+import WeeklySummary from './WeeklySummary'
+import TrainingPlanCard from './TrainingPlanCard'
 
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
@@ -11,7 +13,7 @@ const cardStyle = (theme) => ({
   transition:   CARD_TRANSITION,
 })
 
-function TomorrowCard({ theme, decision }) {
+function TomorrowCard({ theme, decision, todaysPlan }) {
   const navigate = useNavigate()
   const now  = new Date()
   const hour = now.getHours()
@@ -21,40 +23,127 @@ function TomorrowCard({ theme, decision }) {
   const dayName = nextWorkoutDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()
   const label = isToday ? `TODAY · ${dayName}` : `TOMORROW · ${dayName}`
 
+  const isRest = todaysPlan?.type === 'rest'
+  const isWalk = todaysPlan?.type === 'walk'
+
+  const workoutTitle = todaysPlan?.label || 'Lower body + core'
+  const subtitle = isWalk || isRest
+    ? (isWalk ? `${todaysPlan.distance}mi · ${todaysPlan.speed}` : todaysPlan.label)
+    : '30–40 min · full intensity'
+
+  const intensity = decision?.intensity ?? 0
+  const intensityLabel =
+    intensity <= 3 ? 'Active recovery'
+    : intensity <= 5 ? 'Moderate'
+    : intensity <= 7 ? 'Solid session'
+    : intensity <= 9 ? 'Hard session'
+    : 'Full intensity'
+
   const pills = ['Glute bridges', 'Dead bug', 'Hip hinge', 'Band abduction']
+
   return (
-    <div style={cardStyle(theme)}>
+    <div style={{ ...cardStyle(theme), display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
       <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </div>
       <div style={{ fontSize: '20px', fontWeight: 600, color: theme.accent, marginTop: '6px', transition: 'color 1.5s ease' }}>
-        Lower body + core
+        {workoutTitle}
       </div>
-      <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '10px' }}>
-        30–40 min · full intensity
-      </div>
-      <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px' }}>
-        {pills.map(p => (
-          <span key={p} style={{
-            background:   theme.bgSecondary,
-            border:       `0.5px solid ${theme.cardBorder}`,
-            color:        theme.textSecondary,
-            borderRadius: '20px',
-            padding:      '3px 10px',
-            fontSize:     '11px',
-            transition:   CARD_TRANSITION,
-          }}>
-            {p}
-          </span>
-        ))}
-      </div>
+      {!isRest && (
+        <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '10px' }}>
+          {subtitle}
+        </div>
+      )}
+
+      {/* Rest day */}
+      {isRest && (
+        <div style={{ marginTop: '4px' }}>
+          <div style={{ fontSize: '22px', fontWeight: 600, color: theme.textSecondary }}>
+            Recovery Day
+          </div>
+          <div style={{ fontSize: '13px', color: theme.textMuted, marginTop: '4px' }}>
+            Light stretching or full rest
+          </div>
+          {todaysPlan.nutritionNote && (
+            <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic', marginTop: '8px' }}>
+              {todaysPlan.nutritionNote}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Walk day */}
+      {isWalk && (
+        <div style={{ marginTop: '4px' }}>
+          <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px' }}>
+            <span style={{
+              background: '#172554', color: '#60a5fa',
+              borderRadius: '20px', padding: '3px 10px', fontSize: '11px',
+            }}>
+              {todaysPlan.distance}mi
+            </span>
+            <span style={{
+              background: '#172554', color: '#60a5fa',
+              borderRadius: '20px', padding: '3px 10px', fontSize: '11px',
+            }}>
+              {todaysPlan.speed}
+            </span>
+          </div>
+          <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '8px' }}>
+            {todaysPlan.label}
+          </div>
+        </div>
+      )}
+
+      {/* Strength day — exercise pills */}
+      {!isRest && !isWalk && (
+        <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px' }}>
+          {pills.map(p => (
+            <span key={p} style={{
+              background:   theme.bgSecondary,
+              border:       `0.5px solid ${theme.cardBorder}`,
+              color:        theme.textSecondary,
+              borderRadius: '20px',
+              padding:      '3px 10px',
+              fontSize:     '11px',
+              transition:   CARD_TRANSITION,
+            }}>
+              {p}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Intensity bar — hidden on rest days */}
+      {!isRest && (
+        <div style={{ marginTop: '12px' }}>
+          <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+            Today's Intensity
+          </div>
+          <div style={{ display: 'flex', gap: '3px' }}>
+            {Array.from({ length: 10 }, (_, i) => (
+              <div key={i} style={{
+                flex: 1, height: '6px', borderRadius: '3px',
+                background: i < intensity ? theme.accent : theme.cardBorder,
+                transition: 'background-color 1.5s ease',
+              }} />
+            ))}
+          </div>
+          <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '5px' }}>
+            {intensityLabel}
+          </div>
+        </div>
+      )}
+
+      {/* Coach note */}
       <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '10px' }}>
         {decision?.reasons?.[0] ?? 'HRV trending up. Sleep was solid. Green light.'}
       </div>
+
       <button
+        className="start-workout-btn"
         onClick={() => navigate('/workout')}
         style={{
-          display: 'block',
           width: '100%',
           marginTop: '12px',
           padding: '8px',
@@ -74,41 +163,6 @@ function TomorrowCard({ theme, decision }) {
   )
 }
 
-function ThisWeekCard({ theme, streak, activeEnergyToday }) {
-  const stats = [
-    { label: 'Workouts',    value: '3 of 5',                                             color: theme.textPrimary },
-    { label: 'Avg sleep',   value: '5.7h ↓',                                             color: '#f0a030'        },
-    { label: 'Avg steps',   value: '3,188',                                              color: theme.textPrimary },
-    { label: 'Streak',      value: streak != null ? `${streak}d` : '--',                 color: theme.textPrimary },
-    { label: 'Active kcal', value: activeEnergyToday != null ? `${activeEnergyToday} kcal` : '--', color: theme.accent },
-  ]
-  return (
-    <div style={cardStyle(theme)}>
-      <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        THIS WEEK
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
-        {stats.map(s => (
-          <div key={s.label}>
-            <div style={{ fontSize: '11px', color: theme.textMuted }}>{s.label}</div>
-            <div style={{ fontSize: '15px', fontWeight: 500, color: s.color }}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{
-        background:   theme.badgeWarn.bg,
-        borderRadius: '6px',
-        padding:      '8px 10px',
-        marginTop:    '10px',
-        fontSize:     '11px',
-        color:        theme.badgeWarn.color,
-        transition:   CARD_TRANSITION,
-      }}>
-        ⚠ Avg sleep 5.7h this week. Three nights under 7h. This is suppressing recovery — prioritize sleep this weekend.
-      </div>
-    </div>
-  )
-}
 
 function RaceCard({ theme }) {
   const navigate  = useNavigate()
@@ -175,7 +229,7 @@ function RaceCard({ theme }) {
   )
 }
 
-export default function BottomRow({ theme, decision, streak, activeEnergyToday, respiratoryRate }) {
+export default function BottomRow({ theme, decision, streak, weekSummary, todaysPlan }) {
   return (
     <div style={{
       display: 'grid',
@@ -183,9 +237,12 @@ export default function BottomRow({ theme, decision, streak, activeEnergyToday, 
       gap: '10px',
       padding: '0 14px 14px',
     }}>
-      <TomorrowCard theme={theme} decision={decision} />
-      <ThisWeekCard theme={theme} streak={streak} activeEnergyToday={activeEnergyToday} />
-      <RaceCard     theme={theme} />
+      <TomorrowCard theme={theme} decision={decision} todaysPlan={todaysPlan} />
+      <WeeklySummary weekSummary={weekSummary} theme={theme} streak={streak} />
+      <div style={{ gridColumn: 'span 2' }}>
+        <TrainingPlanCard theme={theme} />
+      </div>
+      <RaceCard theme={theme} />
     </div>
   )
 }

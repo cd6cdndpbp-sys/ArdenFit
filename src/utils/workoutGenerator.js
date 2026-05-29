@@ -1,3 +1,5 @@
+import { getTodaysPlan } from './trainingPlan'
+
 const EXERCISES = {
   lowerBody: [
     {
@@ -129,6 +131,42 @@ const WEEKLY_SPLIT = {
 }
 
 export function generateWorkout(decision, dayOfWeek) {
+  const planToday = getTodaysPlan()
+
+  if (planToday?.type === 'rest') {
+    return {
+      type:      'Active Recovery',
+      duration:  15,
+      intensity: decision?.intensity || 3,
+      warmup:    [],
+      exercises: [],
+      cardio:    null,
+      cooldown:  EXERCISES.flexibility,
+      coachNote: 'Rest day per training plan. Light stretching only.',
+      flags:     ['REST_DAY'],
+    }
+  }
+
+  if (planToday?.type === 'walk') {
+    return {
+      type:      'Treadmill Walk',
+      duration:  Math.round(planToday.distance / 3.1 * 60),
+      intensity: decision?.intensity || 6,
+      warmup: [
+        { name: 'Gentle March in Place', duration: 2, instruction: '2 min slow, hands on wall if needed' },
+      ],
+      exercises: [],
+      cardio: {
+        duration:    Math.round(planToday.distance / 3.1 * 60),
+        speed:       planToday.speed,
+        instruction: `${planToday.distance} mile ${planToday.label.toLowerCase()} at ${planToday.speed}. Stay conversational — if you can't talk, slow down.`,
+      },
+      cooldown:  EXERCISES.flexibility.slice(0, 3),
+      coachNote: `${planToday.label} · ${planToday.distance} miles`,
+      flags:     [],
+    }
+  }
+
   const intensity = decision?.intensity || 7
   const split = WEEKLY_SPLIT[dayOfWeek]
 

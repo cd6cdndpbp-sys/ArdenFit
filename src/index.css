@@ -19,3 +19,6 @@ body {
   }
 }
 
+.start-workout-btn { display: block; }
+@media (min-width: 601px) { .start-workout-btn { display: none; } }
+

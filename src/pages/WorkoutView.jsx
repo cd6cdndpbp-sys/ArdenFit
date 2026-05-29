@@ -353,7 +353,7 @@ export default function WorkoutView() {
       intensity: workout.intensity,
       flags: workout.flags,
     })
-    navigate('/')
+    navigate('/', { state: { justCompleted: modal === 'complete' } })
   }
 
   return (
