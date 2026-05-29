@@ -13,9 +13,12 @@ const themes = {
     textMuted: '#6b5540',
     sparklineHR: '#f0a030',
     sparklineHRV: '#e8c060',
-    badgeGood: { bg: '#3d2a0a', color: '#f0a030' },
+    badgeGood:   { bg: '#3d2a0a', color: '#f0a030' },
     badgeNormal: { bg: '#1a2a1a', color: '#60b060' },
-    badgeWarn: { bg: '#3d1a0a', color: '#e06030' },
+    badgeWarn:   { bg: '#3d1a0a', color: '#e06030' },
+    headerDataStripBg:     'rgba(255,255,255,0.06)',
+    headerDataStripBorder: 'rgba(255,255,255,0.1)',
+    headerTextColor: '#fff',
   },
   afternoon: {  // 12-16
     name: 'afternoon',
@@ -31,9 +34,12 @@ const themes = {
     textMuted: '#445566',
     sparklineHR: '#4a9edd',
     sparklineHRV: '#3ecf8e',
-    badgeGood: { bg: '#0f3d2e', color: '#3ecf8e' },
+    badgeGood:   { bg: '#0f3d2e', color: '#3ecf8e' },
     badgeNormal: { bg: '#1a2a3a', color: '#4a9edd' },
-    badgeWarn: { bg: '#3d2a0a', color: '#f0a030' },
+    badgeWarn:   { bg: '#3d2a0a', color: '#f0a030' },
+    headerDataStripBg:     'rgba(255,255,255,0.06)',
+    headerDataStripBorder: 'rgba(255,255,255,0.1)',
+    headerTextColor: '#fff',
   },
   evening: {   // 17-21
     name: 'evening',
@@ -49,9 +55,12 @@ const themes = {
     textMuted: '#555',
     sparklineHR: '#4a9edd',
     sparklineHRV: '#3ecf8e',
-    badgeGood: { bg: '#0f3d2e', color: '#3ecf8e' },
+    badgeGood:   { bg: '#0f3d2e', color: '#3ecf8e' },
     badgeNormal: { bg: '#1a2a3a', color: '#4a9edd' },
-    badgeWarn: { bg: '#3d2a0a', color: '#f0a030' },
+    badgeWarn:   { bg: '#3d2a0a', color: '#f0a030' },
+    headerDataStripBg:     'rgba(255,255,255,0.06)',
+    headerDataStripBorder: 'rgba(255,255,255,0.1)',
+    headerTextColor: '#fff',
   },
   night: {     // 22-4
     name: 'night',
@@ -67,17 +76,112 @@ const themes = {
     textMuted: '#404060',
     sparklineHR: '#a78bfa',
     sparklineHRV: '#7c6cd0',
-    badgeGood: { bg: '#1e1040', color: '#a78bfa' },
+    badgeGood:   { bg: '#1e1040', color: '#a78bfa' },
     badgeNormal: { bg: '#101030', color: '#6080d0' },
-    badgeWarn: { bg: '#301020', color: '#d060a0' },
+    badgeWarn:   { bg: '#301020', color: '#d060a0' },
+    headerDataStripBg:     'rgba(255,255,255,0.06)',
+    headerDataStripBorder: 'rgba(255,255,255,0.1)',
+    headerTextColor: '#e8e8ff',
   },
 }
 
-export function getTimeTheme(hour) {
-  if (hour >= 5  && hour < 12) return themes.morning
-  if (hour >= 12 && hour < 17) return themes.afternoon
-  if (hour >= 17 && hour < 22) return themes.evening
-  return themes.night
+const lightThemes = {
+  morning: {
+    name: 'morning-light',
+    bg: '#fdf6ee',
+    bgSecondary: '#f5ead8',
+    cardBg: '#ffffff',
+    cardBorder: '#e8d5b8',
+    accent: '#b87020',
+    accentBg: '#fdecd4',
+    accentText: '#b87020',
+    textPrimary: '#1a1008',
+    textSecondary: '#7a5030',
+    textMuted: '#a07850',
+    sparklineHR: '#b87020',
+    sparklineHRV: '#c89040',
+    badgeGood:   { bg: '#d4edda', color: '#1a6630' },
+    badgeNormal: { bg: '#cce5f5', color: '#0a4a7a' },
+    badgeWarn:   { bg: '#fdecd4', color: '#b87020' },
+    headerDataStripBg:     'rgba(0,0,0,0.06)',
+    headerDataStripBorder: 'rgba(0,0,0,0.1)',
+    headerTextColor: '#1a1008',
+  },
+  afternoon: {
+    name: 'afternoon-light',
+    bg: '#eef4fb',
+    bgSecondary: '#ddeaf8',
+    cardBg: '#ffffff',
+    cardBorder: '#c8daf0',
+    accent: '#1a6aaa',
+    accentBg: '#ddeaf8',
+    accentText: '#1a6aaa',
+    textPrimary: '#0a1520',
+    textSecondary: '#3a5a7a',
+    textMuted: '#6a8aaa',
+    sparklineHR: '#1a6aaa',
+    sparklineHRV: '#1a9a6a',
+    badgeGood:   { bg: '#d4edda', color: '#1a6630' },
+    badgeNormal: { bg: '#cce5f5', color: '#0a4a7a' },
+    badgeWarn:   { bg: '#fff3cd', color: '#856404' },
+    headerDataStripBg:     'rgba(0,0,0,0.06)',
+    headerDataStripBorder: 'rgba(0,0,0,0.1)',
+    headerTextColor: '#0a1520',
+  },
+  evening: {
+    name: 'evening-light',
+    bg: '#f0faf5',
+    bgSecondary: '#ddf2e8',
+    cardBg: '#ffffff',
+    cardBorder: '#b8e0cc',
+    accent: '#0a7a4a',
+    accentBg: '#ddf2e8',
+    accentText: '#0a7a4a',
+    textPrimary: '#081a10',
+    textSecondary: '#2a6a4a',
+    textMuted: '#5a9a7a',
+    sparklineHR: '#1a6aaa',
+    sparklineHRV: '#0a7a4a',
+    badgeGood:   { bg: '#d4edda', color: '#1a6630' },
+    badgeNormal: { bg: '#cce5f5', color: '#0a4a7a' },
+    badgeWarn:   { bg: '#fff3cd', color: '#856404' },
+    headerDataStripBg:     'rgba(0,0,0,0.06)',
+    headerDataStripBorder: 'rgba(0,0,0,0.1)',
+    headerTextColor: '#081a10',
+  },
+  night: {
+    name: 'night-light',
+    bg: '#f2f0fa',
+    bgSecondary: '#e4e0f5',
+    cardBg: '#ffffff',
+    cardBorder: '#c8c0e8',
+    accent: '#5a3aaa',
+    accentBg: '#e4e0f5',
+    accentText: '#5a3aaa',
+    textPrimary: '#0e0818',
+    textSecondary: '#4a3a7a',
+    textMuted: '#7a6aaa',
+    sparklineHR: '#5a3aaa',
+    sparklineHRV: '#7a4a9a',
+    badgeGood:   { bg: '#d4edda', color: '#1a6630' },
+    badgeNormal: { bg: '#e4e0f5', color: '#5a3aaa' },
+    badgeWarn:   { bg: '#fff3cd', color: '#856404' },
+    headerDataStripBg:     'rgba(0,0,0,0.06)',
+    headerDataStripBorder: 'rgba(0,0,0,0.1)',
+    headerTextColor: '#0e0818',
+  },
+}
+
+export function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+export function getTimeTheme(hour, colorScheme = 'dark') {
+  const themeSet = colorScheme === 'light' ? lightThemes : themes
+  if (hour >= 5  && hour < 12) return themeSet.morning
+  if (hour >= 12 && hour < 17) return themeSet.afternoon
+  if (hour >= 17 && hour < 22) return themeSet.evening
+  return themeSet.night
 }
 
 export default themes

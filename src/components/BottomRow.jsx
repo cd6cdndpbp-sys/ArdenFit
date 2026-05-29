@@ -46,26 +46,26 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
       <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </div>
-      <div style={{ fontSize: '20px', fontWeight: 600, color: theme.accent, marginTop: '6px', transition: 'color 1.5s ease' }}>
+      <div style={{ fontSize: '20px', fontWeight: 600, color: theme.accent, marginTop: '4px', transition: 'color 1.5s ease' }}>
         {workoutTitle}
       </div>
       {!isRest && (
-        <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '10px' }}>
+        <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '8px' }}>
           {subtitle}
         </div>
       )}
 
       {/* Rest day */}
       {isRest && (
-        <div style={{ marginTop: '4px' }}>
-          <div style={{ fontSize: '22px', fontWeight: 600, color: theme.textSecondary }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 600, color: theme.textSecondary }}>
             Recovery Day
           </div>
-          <div style={{ fontSize: '13px', color: theme.textMuted, marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: theme.textMuted }}>
             Light stretching or full rest
           </div>
           {todaysPlan.nutritionNote && (
-            <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic', marginTop: '8px' }}>
+            <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic' }}>
               {todaysPlan.nutritionNote}
             </div>
           )}

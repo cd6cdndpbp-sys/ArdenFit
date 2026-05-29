@@ -112,7 +112,7 @@ export default function TrainingPlanCard({ theme }) {
             <div style={{
               background:   typePill.bg,
               color:        typePill.color,
-              border:       typePill.border || 'none',
+              border:       todayPlan.type === 'rest' ? `0.5px solid ${theme.cardBorder}` : 'none',
               borderRadius: '20px',
               fontSize:     '11px',
               fontWeight:   600,
@@ -145,21 +145,28 @@ export default function TrainingPlanCard({ theme }) {
         <div style={{ display: 'flex', gap: '4px' }}>
           {weekPlan.map(d => {
             const isToday = d.day === todayKey
-            const pill    = TYPE_PILL[d.type] || TYPE_PILL.rest
+            const pillBg  = isToday ? theme.accent
+              : d.type === 'walk'     ? theme.accentBg
+              : d.type === 'strength' ? '#f5e6c8'
+              : theme.bgSecondary
+            const pillColor = isToday ? '#fff'
+              : d.type === 'walk'     ? theme.accentText
+              : d.type === 'strength' ? '#7a4010'
+              : theme.textMuted
             return (
               <div key={d.day} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                 <div style={{
                   width:          '100%',
                   height:         '32px',
                   borderRadius:   '6px',
-                  background:     isToday ? theme.accent : pill.bg,
-                  border:         d.type === 'rest' && !isToday ? '0.5px solid #444' : 'none',
+                  background:     pillBg,
+                  border:         d.type === 'rest' && !isToday ? `0.5px solid ${theme.cardBorder}` : 'none',
                   display:        'flex',
                   alignItems:     'center',
                   justifyContent: 'center',
                   fontSize:       '12px',
                   fontWeight:     isToday ? 700 : 400,
-                  color:          isToday ? '#000' : pill.color,
+                  color:          pillColor,
                   transition:     'background-color 1.5s ease',
                 }}>
                   {DAY_INITIAL[d.day]}

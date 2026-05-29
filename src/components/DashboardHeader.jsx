@@ -9,48 +9,17 @@ const ARDEN_IMAGES = {
   overtraining:   'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS6.png',
 }
 
-const styles = {
-  header: {
-    position: 'relative',
-    width: '100%',
-    height: '200px',
-    background: '#0e0e10',
-    overflow: 'hidden',
-    borderBottom: '1px solid #1e1e22',
-  },
-  left: {
-    position: 'absolute',
-    left: '20px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    maxWidth: '58%',
-    zIndex: 2,
-  },
-  greeting: {
-    fontSize: '32px',
-    fontWeight: 600,
-    color: '#fff',
-    margin: 0,
-    lineHeight: 1.2,
-  },
-  subtitle: {
-    fontSize: '13px',
-    color: '#888',
-    marginTop: '4px',
-    marginBottom: '14px',
-  },
-  pill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    background: '#1a2e22',
-    border: '0.5px solid #2a4a36',
-    borderRadius: '20px',
-    padding: '5px 12px',
-    fontSize: '12px',
-    color: '#3ecf8e',
-  },
-}
+const dataPillStyle = (theme) => ({
+  display:        'inline-flex',
+  alignItems:     'center',
+  gap:            '6px',
+  background:     theme.headerDataStripBg     || 'rgba(255,255,255,0.06)',
+  border:         `0.5px solid ${theme.headerDataStripBorder || 'rgba(255,255,255,0.1)'}`,
+  borderRadius:   '20px',
+  padding:        '6px 14px',
+  fontSize:       '13px',
+  color:          theme.headerTextColor || theme.textPrimary,
+})
 
 const getTimeOfDay = () => {
   const h = new Date().getHours()
@@ -66,9 +35,10 @@ export default function DashboardHeader({
   tomorrowWorkout,
   ardenState,
   theme,
+  healthData,
 }) {
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay)
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600)
+  const [isMobile, setIsMobile]   = useState(() => window.innerWidth < 600)
 
   useEffect(() => {
     const id = setInterval(() => setTimeOfDay(getTimeOfDay()), 60 * 1000)
@@ -81,32 +51,93 @@ export default function DashboardHeader({
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  console.log('ARDEN KEY:', ardenState, '| URL:', ARDEN_IMAGES[ardenState])
+  const sleep      = healthData?.sleep?.total
+  const hrv        = healthData?.hrv
+  const restingHR  = healthData?.restingHR
+  const sleepColor = sleep >= 7 ? '#3ecf8e' : sleep >= 6 ? theme.textPrimary : '#f0a030'
 
   return (
-    <header style={{ ...styles.header, background: theme.bg, transition: 'background-color 2s ease', height: isMobile ? '160px' : '200px' }}>
-      <div style={styles.left}>
-        <p style={{ ...styles.greeting, fontSize: isMobile ? '22px' : '32px' }}>Good {timeOfDay}, {userName}</p>
-        <p style={styles.subtitle}>{subtitle}</p>
-        <span style={{ ...styles.pill, background: theme.accentBg, border: `0.5px solid ${theme.accent}`, color: theme.accentText, transition: 'background-color 1.5s ease, border-color 1.5s ease, color 1.5s ease' }}>
+    <header
+      className="dashboard-header"
+      style={{
+        position:     'relative',
+        width:        '100%',
+        background:   theme.bg,
+        overflow:     'hidden',
+        borderBottom: `1px solid ${theme.cardBorder}`,
+        transition:   'background-color 2s ease',
+      }}
+    >
+      {/* Greeting content */}
+      <div style={{
+        position:  'absolute',
+        left:      isMobile ? '20px' : '28px',
+        top:       '50%',
+        transform: 'translateY(-50%)',
+        maxWidth:  isMobile ? '58%' : '45%',
+        zIndex:    2,
+      }}>
+        <p style={{
+          fontSize:   isMobile ? '22px' : '36px',
+          fontWeight: 600,
+          color:      theme.textPrimary,
+          margin:     0,
+          lineHeight: 1.2,
+        }}>
+          Good {timeOfDay}, {userName}
+        </p>
+        <p style={{ fontSize: '13px', color: theme.textMuted, marginTop: '4px', marginBottom: '14px' }}>
+          {subtitle}
+        </p>
+        <span style={{
+          display:    'inline-flex',
+          alignItems: 'center',
+          gap:        '6px',
+          background: theme.accentBg,
+          border:     `0.5px solid ${theme.accent}`,
+          borderRadius: '20px',
+          padding:    '5px 12px',
+          fontSize:   '12px',
+          color:      theme.accentText,
+          transition: 'background-color 1.5s ease, border-color 1.5s ease, color 1.5s ease',
+        }}>
           ⚡ {tomorrowWorkout}
         </span>
       </div>
 
-      {console.log('IMG SRC RENDERING:', ARDEN_IMAGES[ardenState])}
+      {/* Live data strip — desktop only via CSS class */}
+      <div className="header-data-strip">
+        {sleep != null && (
+          <div style={dataPillStyle(theme)}>
+            <span style={{ fontSize: '14px', color: sleepColor }}>🌙</span>
+            <span style={{ color: sleepColor }}>{sleep}h</span>
+          </div>
+        )}
+        {hrv != null && (
+          <div style={dataPillStyle(theme)}>
+            <span style={{ fontSize: '14px', color: theme.accent }}>∿</span>
+            <span style={{ color: theme.accent }}>{hrv} ms</span>
+          </div>
+        )}
+        {restingHR != null && (
+          <div style={dataPillStyle(theme)}>
+            <span style={{ fontSize: '14px', color: '#4a9edd' }}>♡</span>
+            <span style={{ color: '#4a9edd' }}>{restingHR} bpm</span>
+          </div>
+        )}
+      </div>
+
+      {/* Arden — height controlled by .arden-img CSS class */}
       <img
         src={ARDEN_IMAGES[ardenState] || ARDEN_IMAGES.rest}
         alt="Arden"
         className="arden-img"
         style={{
-          position: 'absolute',
-          right: '-10px',
-          bottom: '-10px',
-          height: isMobile ? '140px' : '190px',
-          width: 'auto',
-          objectFit: 'contain',
+          position:       'absolute',
+          width:          'auto',
+          objectFit:      'contain',
           objectPosition: 'bottom right',
-          zIndex: 1,
+          zIndex:         1,
         }}
       />
     </header>

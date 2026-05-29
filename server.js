@@ -13,9 +13,37 @@ app.use(express.json({ limit: '50mb' }))
 const DATA_FILE = path.join(__dirname, 'health-data.json')
 
 app.post('/api/health', (req, res) => {
-  const payload = req.body
-  fs.writeFileSync(DATA_FILE, JSON.stringify(payload, null, 2))
-  console.log('Health data received:', new Date().toISOString())
+  const incoming = req.body
+  let existing = {}
+  if (fs.existsSync(DATA_FILE)) {
+    existing = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+  }
+
+  const merged = { ...existing }
+  if (incoming.data?.metrics) {
+    merged.data = merged.data || {}
+    merged.data.metrics = merged.data.metrics || []
+
+    incoming.data.metrics.forEach(incomingMetric => {
+      const existingMetric = merged.data.metrics.find(
+        m => m.name === incomingMetric.name
+      )
+      if (existingMetric) {
+        const combined = [...existingMetric.data, ...incomingMetric.data]
+        const seen = new Set()
+        existingMetric.data = combined.filter(d => {
+          if (seen.has(d.date)) return false
+          seen.add(d.date)
+          return true
+        })
+      } else {
+        merged.data.metrics.push(incomingMetric)
+      }
+    })
+  }
+
+  fs.writeFileSync(DATA_FILE, JSON.stringify(merged, null, 2))
+  console.log('Health data merged:', new Date().toISOString())
   res.json({ success: true })
 })
 

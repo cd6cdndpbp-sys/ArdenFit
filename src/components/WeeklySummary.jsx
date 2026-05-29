@@ -14,7 +14,7 @@ function SleepSparkline({ sleepLast7, theme }) {
         {sleepLast7.map(({ date, hours }) => {
           const isToday  = date === TODAY_STR
           const barH     = hours ? Math.max(2, Math.round((Math.min(hours, 9) / 9) * 60)) : 4
-          const barColor = !hours ? '#333'
+          const barColor = !hours ? theme.cardBorder
             : hours >= 7 ? theme.accent
             : hours >= 6 ? '#888'
             : '#e05555'
@@ -64,8 +64,8 @@ export default function WeeklySummary({ weekSummary, theme, streak }) {
     : sleepTrend === 'down' ? { char: '↓', color: '#f0a030' }
     : { char: '→', color: theme.textMuted }
 
-  const sleepColor = avgSleep >= 7 ? theme.accent : avgSleep >= 6 ? '#fff' : '#f0a030'
-  const workoutColor = workoutsCompleted >= workoutsPlanned ? theme.accent : '#fff'
+  const sleepColor = avgSleep >= 7 ? theme.accent : avgSleep >= 6 ? theme.textPrimary : '#f0a030'
+  const workoutColor = workoutsCompleted >= workoutsPlanned ? theme.accent : theme.textPrimary
 
   const stats = [
     { label: 'Workouts',       value: `${workoutsCompleted} of ${workoutsPlanned}`, color: workoutColor },
@@ -117,6 +117,7 @@ export default function WeeklySummary({ weekSummary, theme, streak }) {
       {flags.map((flag, i) => (
         <div key={i} style={{
           background:   theme.badgeWarn.bg,
+          border:       `0.5px solid ${theme.badgeWarn.color}40`,
           borderRadius: '6px',
           padding:      '8px 10px',
           marginTop:    '10px',

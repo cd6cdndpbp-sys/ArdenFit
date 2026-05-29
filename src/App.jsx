@@ -5,11 +5,13 @@ import RaceManager from './pages/RaceManager'
 
 function App() {
   return (
+    <div className="app-wrapper">
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/workout" element={<WorkoutView />} />
       <Route path="/races" element={<RaceManager />} />
     </Routes>
+    </div>
   )
 }
 

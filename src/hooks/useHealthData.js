@@ -19,7 +19,6 @@ const useHealthData = () => {
 
         const sleep = getMetric('sleep_analysis')
         const sleepData = sleep?.data?.[sleep.data.length - 1] || null
-        console.log('raw sleepData:', sleepData)
 
         const restingHR_metric = getMetric('resting_heart_rate')
         const restingHRValue = restingHR_metric?.data?.[restingHR_metric.data.length - 1]?.qty || null
@@ -113,8 +112,6 @@ const useHealthData = () => {
           const entry = sleep?.data?.find(d => d.date?.startsWith(date))
           return { date, hours: entry?.totalSleep ? Math.round(entry.totalSleep * 10) / 10 : null }
         })
-        console.log('SLEEP LAST 7:', JSON.stringify(sleepLast7))
-        console.log('ALL SLEEP DATA dates:', sleep?.data?.map(d => d.date))
         const sleepValues = sleepLast7.map(d => d.hours).filter(Boolean)
         const avgSleepWeek = sleepValues.length > 0
           ? Math.round((sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length) * 10) / 10

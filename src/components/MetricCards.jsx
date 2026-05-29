@@ -98,7 +98,7 @@ function SleepCard({ sleep, theme }) {
         <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textSecondary, letterSpacing: '0.04em' }}>SLEEP</div>
         <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>Last night</div>
       </div>
-      <div style={valueStyle}>{totalHrs} hrs</div>
+      <div style={{ ...valueStyle, color: theme.textPrimary }}>{totalHrs} hrs</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', fontSize: '11px' }}>
         {stages.map(st => (
           <div key={st.name}>
@@ -121,7 +121,7 @@ function HRCard({ restingHR, hrTrend, theme }) {
         <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textSecondary, letterSpacing: '0.04em' }}>RESTING HR</div>
         <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>7-day trend</div>
       </div>
-      <div style={valueStyle}>{hrVal} bpm</div>
+      <div style={{ ...valueStyle, color: theme.textPrimary }}>{hrVal} bpm</div>
       <Sparkline values={trend} color={theme.sparklineHR} />
     </div>
   )
@@ -137,7 +137,7 @@ function HRVCard({ hrv, hrvTrend, theme }) {
         <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textSecondary, letterSpacing: '0.04em' }}>HRV</div>
         <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>7-day trend</div>
       </div>
-      <div style={valueStyle}>{hrvVal} ms</div>
+      <div style={{ ...valueStyle, color: theme.textPrimary }}>{hrvVal} ms</div>
       <Sparkline values={trend} color={theme.sparklineHRV} />
     </div>
   )
@@ -154,7 +154,7 @@ function StepsCard({ steps, theme }) {
         <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textSecondary, letterSpacing: '0.04em' }}>STEPS</div>
         <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>Goal: 8,000</div>
       </div>
-      <div style={valueStyle}>{s.toLocaleString()} steps</div>
+      <div style={{ ...valueStyle, color: theme.textPrimary }}>{s.toLocaleString()} steps</div>
       <div style={{ height: '5px', background: theme.cardBorder, borderRadius: '3px', margin: '4px 0', transition: CARD_TRANSITION }}>
         <div style={{ width: `${pct}%`, height: '100%', background: theme.accent, borderRadius: '3px' }} />
       </div>
