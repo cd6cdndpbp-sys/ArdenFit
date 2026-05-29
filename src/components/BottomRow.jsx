@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { getNextRace, getDaysUntil, getProgressPercent } from '../utils/raceManager'
 
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
@@ -110,38 +111,65 @@ function ThisWeekCard({ theme, streak, activeEnergyToday }) {
 }
 
 function RaceCard({ theme }) {
-  const totalWeeks     = 52
-  const weeksRemaining = 49
-  const weeksElapsed   = totalWeeks - weeksRemaining
-  const progress       = Math.round((weeksElapsed / totalWeeks) * 100)
+  const navigate  = useNavigate()
+  const nextRace  = getNextRace()
+  const daysUntil = nextRace ? getDaysUntil(nextRace.date) : null
+  const progress  = nextRace ? getProgressPercent(nextRace.date) : 0
+
+  if (!nextRace) return null
 
   return (
-    <div style={{ ...cardStyle(theme), display: 'flex', alignItems: 'center', justifyContent: 'space-between', gridColumn: 'span 2' }}>
-      <div style={{ minWidth: '160px' }}>
-        <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>NEXT RACE</div>
-        <div style={{ fontSize: '16px', fontWeight: 600, color: theme.textPrimary, marginTop: '4px' }}>
-          MCM Historic Half
-        </div>
-        <div style={{ fontSize: '12px', color: theme.textSecondary, marginTop: '2px' }}>
-          May 2027 · Fredericksburg, VA
-        </div>
+    <div style={{ ...cardStyle(theme), gridColumn: 'span 2' }}>
+      {/* Label */}
+      <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        NEXT RACE
       </div>
 
-      <div style={{ flex: 1, margin: '0 24px' }}>
+      {/* Race name */}
+      <div style={{ fontSize: '18px', fontWeight: 600, color: theme.textPrimary, marginTop: '4px' }}>
+        {nextRace.name}
+      </div>
+
+      {/* Distance · location */}
+      <div style={{ fontSize: '13px', color: theme.textSecondary, marginTop: '2px' }}>
+        {[nextRace.distance, nextRace.location].filter(Boolean).join(' · ')}
+      </div>
+
+      {/* Goal */}
+      {nextRace.goal && (
+        <div style={{ fontSize: '13px', color: theme.accentText, fontStyle: 'italic', marginTop: '3px', transition: 'color 1.5s ease' }}>
+          {nextRace.goal}
+        </div>
+      )}
+
+      {/* Progress bar */}
+      <div style={{ marginTop: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
           <span>Today</span>
           <span>Race day</span>
         </div>
-        <div style={{ height: '5px', background: theme.cardBorder, borderRadius: '3px', transition: CARD_TRANSITION }}>
-          <div style={{ width: `${progress}%`, height: '100%', background: theme.accent, borderRadius: '3px', transition: 'background-color 1.5s ease' }} />
+        <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
+          <div style={{ width: `${progress}%`, height: '100%', background: theme.accent, borderRadius: '2px', transition: 'background-color 1.5s ease' }} />
         </div>
       </div>
 
-      <div style={{ textAlign: 'right', minWidth: '72px' }}>
-        <div style={{ fontSize: '28px', fontWeight: 700, color: '#c084fc', lineHeight: 1 }}>
-          {weeksRemaining * 7}
+      {/* Days away + manage link */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
+        <div>
+          <span style={{ fontSize: '36px', fontWeight: 700, color: '#c084fc', lineHeight: 1 }}>
+            {daysUntil}
+          </span>
+          <span style={{ fontSize: '13px', color: theme.textMuted, marginLeft: '6px' }}>
+            days away
+          </span>
         </div>
-        <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '3px' }}>days away</div>
+        <button onClick={() => navigate('/races')} style={{
+          background: 'none', border: 'none',
+          color: theme.textMuted, fontSize: '11px',
+          cursor: 'pointer', textDecoration: 'underline', padding: 0,
+        }}>
+          Manage →
+        </button>
       </div>
     </div>
   )

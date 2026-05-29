@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getWorkoutLogs } from '../utils/workoutLogger'
 
 const useHealthData = () => {
   const [healthData, setHealthData] = useState(null)
@@ -63,9 +64,24 @@ const useHealthData = () => {
           exerciseLast7.push({ date: dateStr, mins: Math.round(dayMins) })
         }
 
+        const exerciseHistory = []
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          const dateStr = d.toISOString().split('T')[0]
+          const dayMins = exerciseMinutes?.data
+            ?.filter(e => e.date?.startsWith(dateStr))
+            ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
+          exerciseHistory.push({ date: dateStr, mins: Math.round(dayMins) })
+        }
+
         let streak = 0
-        for (let i = exerciseLast7.length - 2; i >= 0; i--) {
-          if (exerciseLast7[i].mins >= 5) streak++
+        const todayMins = exerciseHistory.find(d => d.date === today)?.mins || 0
+        let startIndex = todayMins >= 15
+          ? exerciseHistory.length - 1
+          : exerciseHistory.length - 2
+        for (let i = startIndex; i >= 0; i--) {
+          if (exerciseHistory[i].mins >= 15) streak++
           else break
         }
 

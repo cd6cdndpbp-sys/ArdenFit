@@ -50,33 +50,8 @@ const styles = {
     fontSize: '12px',
     color: '#3ecf8e',
   },
-  topRight: {
-    position: 'absolute',
-    right: '20px',
-    top: '16px',
-    textAlign: 'right',
-    zIndex: 3,
-  },
-  time: {
-    fontSize: '18px',
-    fontWeight: 500,
-    color: '#fff',
-    margin: 0,
-  },
-  date: {
-    fontSize: '11px',
-    color: '#555',
-    marginTop: '2px',
-  },
 }
 
-const fadeMask = [
-  'linear-gradient(to right, transparent 0%, black 30%, black 100%)',
-  'linear-gradient(to bottom, transparent 0%, black 45%, black 100%)',
-].join(', ')
-
-const getTime = () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-const getDate = () => new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
 const getTimeOfDay = () => {
   const h = new Date().getHours()
   if (h >= 5  && h < 12) return 'morning'
@@ -92,14 +67,11 @@ export default function DashboardHeader({
   ardenState,
   theme,
 }) {
-  const [currentTime, setCurrentTime] = useState(getTime)
-  const [currentDate, setCurrentDate] = useState(getDate)
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600)
 
   useEffect(() => {
-    const tick = () => { setCurrentTime(getTime()); setCurrentDate(getDate()); setTimeOfDay(getTimeOfDay()) }
-    const id = setInterval(tick, 60 * 1000)
+    const id = setInterval(() => setTimeOfDay(getTimeOfDay()), 60 * 1000)
     return () => clearInterval(id)
   }, [])
 
@@ -121,11 +93,6 @@ export default function DashboardHeader({
         </span>
       </div>
 
-      <div style={styles.topRight} className="header-topright">
-        <p style={styles.time}>{currentTime}</p>
-        <p style={styles.date}>{currentDate}</p>
-      </div>
-
       {console.log('IMG SRC RENDERING:', ARDEN_IMAGES[ardenState])}
       <img
         src={ARDEN_IMAGES[ardenState] || ARDEN_IMAGES.rest}
@@ -140,10 +107,6 @@ export default function DashboardHeader({
           objectFit: 'contain',
           objectPosition: 'bottom right',
           zIndex: 1,
-          maskImage: fadeMask,
-          WebkitMaskImage: fadeMask,
-          maskComposite: 'intersect',
-          WebkitMaskComposite: 'source-in',
         }}
       />
     </header>
