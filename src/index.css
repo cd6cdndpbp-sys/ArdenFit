@@ -46,3 +46,15 @@ body {
   transition: background-color 0.8s ease;
 }
 
+.metric-cards-grid {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+@media (max-width: 600px) {
+  .metric-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .metric-steps-card {
+    grid-column: span 2;
+  }
+}
+
