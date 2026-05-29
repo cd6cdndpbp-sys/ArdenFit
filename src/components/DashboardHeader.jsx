@@ -95,6 +95,7 @@ export default function DashboardHeader({
   const [currentTime, setCurrentTime] = useState(getTime)
   const [currentDate, setCurrentDate] = useState(getDate)
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600)
 
   useEffect(() => {
     const tick = () => { setCurrentTime(getTime()); setCurrentDate(getDate()); setTimeOfDay(getTimeOfDay()) }
@@ -102,12 +103,18 @@ export default function DashboardHeader({
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 600)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   console.log('ARDEN KEY:', ardenState, '| URL:', ARDEN_IMAGES[ardenState])
 
   return (
-    <header style={{ ...styles.header, background: theme.bg, transition: 'background-color 2s ease' }}>
+    <header style={{ ...styles.header, background: theme.bg, transition: 'background-color 2s ease', height: isMobile ? '160px' : '200px' }}>
       <div style={styles.left}>
-        <p style={styles.greeting}>Good {timeOfDay}, {userName}</p>
+        <p style={{ ...styles.greeting, fontSize: isMobile ? '22px' : '32px' }}>Good {timeOfDay}, {userName}</p>
         <p style={styles.subtitle}>{subtitle}</p>
         <span style={{ ...styles.pill, background: theme.accentBg, border: `0.5px solid ${theme.accent}`, color: theme.accentText, transition: 'background-color 1.5s ease, border-color 1.5s ease, color 1.5s ease' }}>
           ⚡ {tomorrowWorkout}
@@ -127,7 +134,7 @@ export default function DashboardHeader({
           position: 'absolute',
           right: '-10px',
           bottom: '-10px',
-          height: '190px',
+          height: isMobile ? '140px' : '190px',
           width: 'auto',
           objectFit: 'contain',
           objectPosition: 'bottom right',

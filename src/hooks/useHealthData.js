@@ -7,7 +7,10 @@ const useHealthData = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/health')
+        const API_URL = window.location.hostname === 'localhost'
+          ? 'http://localhost:3001/api/health'
+          : 'http://192.168.1.221:3001/api/health'
+        const res = await fetch(API_URL)
         const json = await res.json()
         const metrics = json.data?.metrics || []
 

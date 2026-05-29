@@ -99,7 +99,7 @@ function SleepCard({ sleep, theme }) {
         <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>Last night</div>
       </div>
       <div style={valueStyle}>{totalHrs} hrs</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', fontSize: '11px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', fontSize: '11px' }}>
         {stages.map(st => (
           <div key={st.name}>
             <div style={{ color: theme.textMuted }}>{st.name}</div>
