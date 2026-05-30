@@ -77,7 +77,7 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
               {todaysPlan.nutritionNote}
             </div>
           )}
-          <div style={{ marginTop: '12px' }}>
+          <div className="rest-day-stretches" style={{ marginTop: '12px' }}>
             <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
               Today's Stretches
             </div>

@@ -46,6 +46,9 @@ body {
   transition: background-color 0.8s ease;
 }
 
+.rest-day-stretches { display: block; }
+@media (max-width: 600px) { .rest-day-stretches { display: none; } }
+
 .metric-cards-grid {
   grid-template-columns: 2fr 1fr 1fr;
 }
