@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { getNextRace, getDaysUntil, getProgressPercent } from '../utils/raceManager'
+import { getNextRace, getDaysUntil } from '../utils/raceManager'
+import { getCurrentPhase } from '../utils/trainingPlan'
 import WeeklySummary from './WeeklySummary'
 import TrainingPlanCard from './TrainingPlanCard'
 
@@ -192,66 +193,116 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
 }
 
 
-function RaceCard({ theme }) {
+const RACE_DIST_MI = 13.1
+const GOAL_MIN     = 210   // 3:30:00
+
+const fmtFinish = (mins) => {
+  const h = Math.floor(mins / 60)
+  const m = Math.round(mins % 60)
+  return `${h}:${String(m).padStart(2, '0')}`
+}
+
+const fmtPace = (mpm) => {
+  const m = Math.floor(mpm)
+  const s = Math.round((mpm - m) * 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+export function RaceCard({ theme, healthData }) {
   const navigate  = useNavigate()
-  const nextRace  = getNextRace()
-  const daysUntil = nextRace ? getDaysUntil(nextRace.date) : null
-  const progress  = nextRace ? getProgressPercent(nextRace.date) : 0
+  const nextRace   = getNextRace()
+  const daysUntil  = nextRace ? getDaysUntil(nextRace.date) : null
+  const phase      = getCurrentPhase()
+
+  const hasPace       = (healthData?.distanceToday ?? 0) > 0.5 && (healthData?.exerciseToday ?? 0) > 5
+  const paceMinPerMile = hasPace
+    ? healthData.exerciseToday / healthData.distanceToday
+    : 20.0
+  const estFinishMin   = paceMinPerMile * RACE_DIST_MI
+  const diffMin        = Math.round(estFinishMin - GOAL_MIN)
+  const isOverGoal     = diffMin > 0
+  const finishColor    = isOverGoal ? '#f59e0b' : '#3ecf8e'
+  const barPct         = Math.min(Math.round((estFinishMin / GOAL_MIN) * 100), 100)
 
   if (!nextRace) return null
 
   return (
-    <div style={{ ...cardStyle(theme), gridColumn: 'span 2' }}>
-      {/* Label */}
-      <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        NEXT RACE
-      </div>
+    <div style={cardStyle(theme)}>
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
 
-      {/* Race name */}
-      <div style={{ fontSize: '18px', fontWeight: 600, color: theme.textPrimary, marginTop: '4px' }}>
-        {nextRace.name}
-      </div>
-
-      {/* Distance · location */}
-      <div style={{ fontSize: '13px', color: theme.textSecondary, marginTop: '2px' }}>
-        {[nextRace.distance, nextRace.location].filter(Boolean).join(' · ')}
-      </div>
-
-      {/* Goal */}
-      {nextRace.goal && (
-        <div style={{ fontSize: '13px', color: theme.accentText, fontStyle: 'italic', marginTop: '3px', transition: 'color 1.5s ease' }}>
-          {nextRace.goal}
+        {/* Left — race info */}
+        <div style={{ flex: '1 1 0', minWidth: 0 }}>
+          <div style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            NEXT RACE
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+            <span style={{ fontSize: '18px', fontWeight: 600, color: theme.textPrimary }}>
+              {nextRace.name}
+            </span>
+            <button onClick={() => navigate('/races')} style={{
+              background: 'none', border: 'none',
+              color: theme.textMuted, fontSize: '11px',
+              cursor: 'pointer', textDecoration: 'underline', padding: 0, flexShrink: 0,
+            }}>
+              Manage →
+            </button>
+          </div>
+          <div style={{ fontSize: '13px', color: theme.textSecondary, marginTop: '2px' }}>
+            {[nextRace.distance, nextRace.location].filter(Boolean).join(' · ')}
+          </div>
+          {nextRace.goal && (
+            <div style={{ fontSize: '13px', color: theme.accentText, fontStyle: 'italic', marginTop: '3px', transition: 'color 1.5s ease' }}>
+              {nextRace.goal}
+            </div>
+          )}
+          <div className="race-pills" style={{ marginTop: '10px' }}>
+            <span style={{
+              background: theme.bgSecondary, border: `0.5px solid ${theme.cardBorder}`,
+              borderRadius: '20px', padding: '4px 12px',
+              fontSize: '12px', fontWeight: 600, color: theme.textSecondary,
+              transition: CARD_TRANSITION,
+            }}>
+              {phase.shortName}
+            </span>
+            <span style={{
+              background: theme.bgSecondary, border: `0.5px solid ${theme.cardBorder}`,
+              borderRadius: '20px', padding: '4px 12px',
+              fontSize: '12px', fontWeight: 600, color: '#c084fc',
+              transition: CARD_TRANSITION,
+            }}>
+              {daysUntil} days out
+            </span>
+          </div>
         </div>
-      )}
 
-      {/* Progress bar */}
-      <div style={{ marginTop: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
-          <span>Today</span>
-          <span>Race day</span>
+        {/* Right — estimated finish + goal bar */}
+        <div style={{ flex: '1 1 0', minWidth: 0 }}>
+          <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+            Estimated Finish
+          </div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: finishColor, lineHeight: 1.1 }}>
+            {fmtFinish(estFinishMin)}
+          </div>
+          <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '2px', marginBottom: '10px' }}>
+            {fmtPace(paceMinPerMile)}/mi {hasPace ? 'current pace' : '(default)'}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
+            <span>Sub 3:30 goal</span>
+            <span style={{ color: isOverGoal ? '#f59e0b' : '#3ecf8e' }}>
+              {isOverGoal ? `${diffMin} min over` : `${Math.abs(diffMin)} min under`}
+            </span>
+          </div>
+          <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
+            <div style={{
+              width:      `${barPct}%`,
+              height:     '100%',
+              background: finishColor,
+              borderRadius: '2px',
+            transition: 'background-color 1.5s ease',
+          }} />
+          </div>
         </div>
-        <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
-          <div style={{ width: `${progress}%`, height: '100%', background: theme.accent, borderRadius: '2px', transition: 'background-color 1.5s ease' }} />
-        </div>
-      </div>
 
-      {/* Days away + manage link */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
-        <div>
-          <span style={{ fontSize: '36px', fontWeight: 700, color: '#c084fc', lineHeight: 1 }}>
-            {daysUntil}
-          </span>
-          <span style={{ fontSize: '13px', color: theme.textMuted, marginLeft: '6px' }}>
-            days away
-          </span>
-        </div>
-        <button onClick={() => navigate('/races')} style={{
-          background: 'none', border: 'none',
-          color: theme.textMuted, fontSize: '11px',
-          cursor: 'pointer', textDecoration: 'underline', padding: 0,
-        }}>
-          Manage →
-        </button>
       </div>
     </div>
   )

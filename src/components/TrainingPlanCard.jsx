@@ -1,4 +1,5 @@
-import { getCurrentPhase, getTodaysPlan, getPhaseProgress, getWeightTarget, getWeekPlan } from '../utils/trainingPlan'
+import { useNavigate } from 'react-router-dom'
+import { getCurrentPhase, getTodaysPlan, getPhaseProgress, getWeightTarget } from '../utils/trainingPlan'
 
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
@@ -15,20 +16,33 @@ const TYPE_PILL = {
   rest:     { bg: 'transparent', color: '#666', border: '0.5px solid #444' },
 }
 
-const DAY_INITIAL = { Mon: 'M', Tue: 'T', Wed: 'W', Thu: 'T', Fri: 'F', Sat: 'S', Sun: 'S' }
-
 const fmtDate = (dateStr) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-export default function TrainingPlanCard({ theme }) {
+const WEIGHT_START = 169
+const WEIGHT_GOAL  = 159
+
+export default function TrainingPlanCard({ theme, healthData }) {
+  const navigate     = useNavigate()
   const phase        = getCurrentPhase()
   const todayPlan    = getTodaysPlan()
   const progress     = getPhaseProgress()
   const weightTarget = getWeightTarget()
-  const weekPlan     = getWeekPlan()
   const phasePill    = PHASE_PILL[phase.colorKey] || PHASE_PILL.amber
-  const todayKey     = new Date().toLocaleDateString('en-US', { weekday: 'long' }).slice(0, 3)
-  const typePill     = todayPlan ? (TYPE_PILL[todayPlan.type] || TYPE_PILL.rest) : TYPE_PILL.rest
+
+  const todayComplete = healthData?.todayWorkoutComplete === true
+  const tomorrowKey   = new Date(Date.now() + 86400000).toLocaleDateString('en-US', { weekday: 'long' }).slice(0, 3)
+  const tomorrowDay   = phase.weeklyStructure?.[tomorrowKey]
+  const displayPlan   = todayComplete && tomorrowDay
+    ? { ...tomorrowDay, nutritionNote: phase.nutritionNote }
+    : todayPlan
+  const planLabel     = todayComplete && tomorrowDay ? "Tomorrow's Plan" : "Today's Plan"
+
+  const currentWeight = healthData?.currentWeight ?? null
+  const lbsRemaining  = currentWeight != null ? Math.max(Math.round((currentWeight - WEIGHT_GOAL) * 10) / 10, 0) : 0
+  const weightPct     = currentWeight != null
+    ? Math.min(Math.round((WEIGHT_START - currentWeight) / (WEIGHT_START - WEIGHT_GOAL) * 100), 100)
+    : 0
 
   return (
     <div style={{
@@ -78,105 +92,98 @@ export default function TrainingPlanCard({ theme }) {
         </div>
       </div>
 
-      {/* Weight target — Phase 1 only */}
-      {weightTarget && (
-        <div style={{
-          background:   theme.bgSecondary,
-          border:       `0.5px solid ${theme.cardBorder}`,
-          borderRadius: '8px',
-          padding:      '8px 10px',
-          marginBottom: '12px',
-          transition:   CARD_TRANSITION,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <span style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Weight goal
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>
-              {weightTarget.targetWeight} lbs by {fmtDate('2026-07-15')}
-            </span>
-          </div>
-          <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic', marginTop: '2px' }}>
-            ~{weightTarget.weeklyTarget ?? 1.5} lbs/week needed · {weightTarget.daysToTarget}d left
-          </div>
-        </div>
-      )}
-
-      {/* Today's plan */}
-      {todayPlan && (
+      {/* Today's / Tomorrow's plan */}
+      {displayPlan && (
         <div style={{ marginBottom: '12px' }}>
           <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-            Today's Plan
+            {planLabel}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <div style={{
-              background:   typePill.bg,
-              color:        typePill.color,
-              border:       todayPlan.type === 'rest' ? `0.5px solid ${theme.cardBorder}` : 'none',
+              background:   TYPE_PILL[displayPlan.type]?.bg ?? TYPE_PILL.rest.bg,
+              color:        TYPE_PILL[displayPlan.type]?.color ?? TYPE_PILL.rest.color,
+              border:       displayPlan.type === 'rest' ? `0.5px solid ${theme.cardBorder}` : 'none',
               borderRadius: '20px',
               fontSize:     '11px',
               fontWeight:   600,
               padding:      '3px 10px',
               whiteSpace:   'nowrap',
             }}>
-              {todayPlan.type === 'walk' ? 'Walk'
-                : todayPlan.type === 'strength' ? 'Strength'
+              {displayPlan.type === 'walk' ? 'Walk'
+                : displayPlan.type === 'strength' ? 'Strength'
                 : 'Rest'}
             </div>
             <div style={{ fontSize: '13px', color: theme.textPrimary }}>
-              {todayPlan.type === 'walk'
-                ? `${todayPlan.distance}mi · ${todayPlan.speed}`
-                : todayPlan.type === 'strength'
-                ? `${todayPlan.duration} min`
+              {displayPlan.type === 'walk'
+                ? `${displayPlan.distance}mi · ${displayPlan.speed}`
+                : displayPlan.type === 'strength'
+                ? `${displayPlan.duration} min`
                 : 'Recovery day'}
             </div>
           </div>
           <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic' }}>
-            {todayPlan.nutritionNote}
+            {displayPlan.nutritionNote}
           </div>
         </div>
       )}
 
-      {/* Week at a glance */}
-      <div>
-        <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-          This Week
-        </div>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {weekPlan.map(d => {
-            const isToday = d.day === todayKey
-            const pillBg  = isToday ? theme.accent
-              : d.type === 'walk'     ? theme.accentBg
-              : d.type === 'strength' ? '#f5e6c8'
-              : theme.bgSecondary
-            const pillColor = isToday ? '#fff'
-              : d.type === 'walk'     ? theme.accentText
-              : d.type === 'strength' ? '#7a4010'
-              : theme.textMuted
-            return (
-              <div key={d.day} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                <div style={{
-                  width:          '100%',
-                  height:         '32px',
-                  borderRadius:   '6px',
-                  background:     pillBg,
-                  border:         d.type === 'rest' && !isToday ? `0.5px solid ${theme.cardBorder}` : 'none',
-                  display:        'flex',
-                  alignItems:     'center',
-                  justifyContent: 'center',
-                  fontSize:       '12px',
-                  fontWeight:     isToday ? 700 : 400,
-                  color:          pillColor,
-                  transition:     'background-color 1.5s ease',
-                }}>
-                  {DAY_INITIAL[d.day]}
-                </div>
-                <div style={{ height: '4px', width: '4px', borderRadius: '50%', background: isToday ? theme.accent : 'transparent' }} />
+      <button
+        className="start-workout-btn"
+        onClick={() => navigate('/workout')}
+        style={{
+          width:        '100%',
+          marginBottom: '12px',
+          padding:      '8px',
+          background:   'transparent',
+          border:       `0.5px solid ${theme.accent}`,
+          borderRadius: '8px',
+          color:        theme.accent,
+          fontSize:     '13px',
+          fontWeight:   600,
+          cursor:       'pointer',
+          transition:   'border-color 1.5s ease, color 1.5s ease',
+        }}
+      >
+        → Start Workout
+      </button>
+
+      {/* Weight goal — Phase 1 only */}
+      {weightTarget && (
+        <div style={{
+          background:   theme.bgSecondary,
+          border:       `0.5px solid ${theme.cardBorder}`,
+          borderRadius: '8px',
+          padding:      '8px 10px',
+          transition:   CARD_TRANSITION,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+            <span style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Weight Goal
+            </span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>
+              {weightTarget.targetWeight} lbs by {fmtDate('2026-07-15')}
+            </span>
+          </div>
+          {currentWeight != null && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: theme.textPrimary, whiteSpace: 'nowrap' }}>
+                {currentWeight} lbs
+              </span>
+              <div style={{ flex: 1, height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
+                <div style={{ width: `${weightPct}%`, height: '100%', background: theme.accent, borderRadius: '2px', transition: 'background-color 1.5s ease' }} />
               </div>
-            )
-          })}
+              <span style={{ fontSize: '13px', fontWeight: 600, color: theme.textMuted, whiteSpace: 'nowrap' }}>
+                {WEIGHT_GOAL} lbs
+              </span>
+            </div>
+          )}
+          <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic' }}>
+            ~{weightTarget.weeklyTarget ?? 1.5} lbs/week needed · {weightTarget.daysToTarget}d left
+            {currentWeight != null && lbsRemaining > 0 ? ` · ${lbsRemaining} lbs to go` : ''}
+            {currentWeight != null && lbsRemaining === 0 ? ' · Goal reached!' : ''}
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   )

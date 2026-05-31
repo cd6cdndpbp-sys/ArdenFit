@@ -1,152 +1,105 @@
+import { getTodaysPlan } from './trainingPlan'
+
 export function runDecisionEngine(healthData) {
   if (!healthData) return null
 
-  const { sleep, restingHR, hrv, hrTrend, hrvTrend,
-          activeEnergyYesterday, exerciseToday, streak,
-          respiratoryRate, hrSevenDayAvg } = healthData
+  const hour          = new Date().getHours()
+  const todayComplete = healthData.todayWorkoutComplete === true
+  const todayPlan     = getTodaysPlan()
 
-  const result = {
+  const _t   = new Date()
+  const seed = _t.getFullYear() * 10000 + (_t.getMonth() + 1) * 100 + _t.getDate()
+  const idx  = seed % 4
+
+  // sleepLast7 is oldest→newest; exclude today (last entry) since it's incomplete
+  const sleepNights = (healthData.weekSummary?.sleepLast7 ?? []).slice(0, -1).reverse()
+
+  // 1. SLEEP TIME — highest priority
+  if (hour >= 19 || hour < 4) {
+    const subtitles = [
+      "Wind down time. Sleep is tonight's workout.",
+      "Sleep is the workout you can't skip. Go to bed.",
+      "Screen off. The recovery starts now.",
+      "Your next PR is on the other side of a full night.",
+    ]
+    return {
+      ardenState: 'low_sleep',
+      intensity:  0,
+      flags:      ['SLEEP_TIME'],
+      reasons:    ['Wind-down time — sleep is the priority now.'],
+      subtitle:   subtitles[idx],
+    }
+  }
+
+  // 2. CONSECUTIVE POOR SLEEP — 3+ nights under 6h
+  let poorNights = 0
+  for (const { hours } of sleepNights) {
+    if (hours != null && hours < 6) poorNights++
+    else break
+  }
+  if (poorNights >= 3) {
+    const subtitles = [
+      `${poorNights} nights of low sleep in a row. Recovery mode today.`,
+      `${poorNights} short nights. Your body is keeping score.`,
+      `Sleep debt is real. ${poorNights} nights in the red.`,
+      `${poorNights} nights under target. Protect tonight.`,
+    ]
+    return {
+      ardenState: 'overtraining',
+      intensity:  2,
+      flags:      ['POOR_SLEEP_STREAK'],
+      reasons:    [`${poorNights} consecutive nights under 6h sleep — recovery priority.`],
+      subtitle:   subtitles[idx],
+    }
+  }
+
+  // 3. REST DAY
+  if (todayPlan?.type === 'rest') {
+    const subtitles = [
+      "Rest day. Recovery is part of the plan.",
+      "Scheduled rest. The adaptation happens today.",
+      "Rest day. Don't talk yourself out of it.",
+      "Active recovery counts. Today is intentional.",
+    ]
+    return {
+      ardenState: 'rest',
+      intensity:  0,
+      flags:      ['REST_DAY'],
+      reasons:    ['Scheduled rest day — light stretch or full rest.'],
+      subtitle:   subtitles[idx],
+    }
+  }
+
+  // 4. WORKOUT COMPLETE
+  if (todayComplete) {
+    const subtitles = [
+      "Workout logged. That's what consistency looks like.",
+      "Done. Every session is a deposit.",
+      "Logged. You showed up when it counted.",
+      "One more in the bank. That's how it's built.",
+    ]
+    const postWorkoutState = seed % 2 === 0 ? 'pr' : 'full_intensity'
+    return {
+      ardenState: postWorkoutState,
+      intensity:  10,
+      flags:      ['WORKOUT_COMPLETE'],
+      reasons:    ["Today's workout is done."],
+      subtitle:   subtitles[idx],
+    }
+  }
+
+  // 5. DEFAULT — ready to train
+  const subtitles = [
+    "Let's get after it.",
+    "Data looks good. Your move.",
+    "You've got a window. Use it.",
+    "Everything's green. Don't wait.",
+  ]
+  return {
     ardenState: 'ready',
-    intensity: 10,
-    workoutType: 'Full session',
-    subtitle: "Let's get after it.",
-    todayPlan: 'Full intensity',
-    tomorrowWorkout: 'Check back tomorrow',
-    flags: [],
-    reasons: [],
+    intensity:  7,
+    flags:      [],
+    reasons:    ['Ready to train.'],
+    subtitle:   subtitles[idx],
   }
-
-  // ── SLEEP CHECK ──────────────────────────────────────────
-  const sleepHrs = sleep?.total || 0
-
-  if (sleepHrs < 4) {
-    result.ardenState = 'overtraining'
-    result.intensity = 0
-    result.workoutType = 'No workout'
-    result.subtitle = 'Under 4 hours of sleep. Rest is the workout today.'
-    result.todayPlan = 'No workout'
-    result.flags.push('CRITICAL_SLEEP')
-    result.reasons.push(`Only ${sleepHrs}h sleep — no training today`)
-    return result
-  }
-
-  if (sleepHrs < 5) {
-    result.ardenState = 'low_sleep'
-    result.intensity = 3
-    result.workoutType = 'Active recovery only'
-    result.subtitle = 'Low sleep. Easy walk or light stretch only.'
-    result.todayPlan = '20 min easy walk'
-    result.flags.push('LOW_SLEEP')
-    result.reasons.push(`${sleepHrs}h sleep — recovery day only`)
-    return result
-  }
-
-  if (sleepHrs < 6) {
-    result.ardenState = 'low_sleep'
-    result.intensity = Math.max(1, result.intensity - 4)
-    result.flags.push('REDUCED_SLEEP')
-    result.reasons.push(`${sleepHrs}h sleep — intensity reduced 40%`)
-  }
-
-  if (sleepHrs < 7) {
-    result.intensity = Math.max(1, result.intensity - 2)
-    result.reasons.push(`${sleepHrs}h sleep — moderate intensity only`)
-  }
-
-  // ── HARD SESSION YESTERDAY ───────────────────────────────
-  if (activeEnergyYesterday > 600) {
-    result.flags.push('HARD_YESTERDAY')
-    result.reasons.push(`High active energy yesterday (${activeEnergyYesterday} kcal) — factor in recovery`)
-    if (sleep?.total < 7) {
-      result.intensity = Math.max(1, result.intensity - 2)
-      result.reasons.push('Hard session yesterday + reduced sleep — backing off intensity')
-    }
-  }
-
-  // ── RESTING HR CHECK ─────────────────────────────────────
-  if (hrTrend && hrTrend.length >= 3) {
-    const sevenDayAvg = hrSevenDayAvg || restingHR
-    const elevatedPct = ((restingHR - sevenDayAvg) / sevenDayAvg) * 100
-
-    if (elevatedPct >= 10) {
-      result.ardenState = 'overtraining'
-      result.intensity = Math.max(1, result.intensity - 5)
-      result.flags.push('ELEVATED_HR')
-      result.reasons.push(`Resting HR ${Math.round(elevatedPct)}% above 7-day avg — active recovery only`)
-      result.subtitle = 'Resting HR is elevated. Your body is working hard — back off today.'
-      result.todayPlan = 'Active recovery'
-    }
-  }
-
-  // ── HRV CHECK ────────────────────────────────────────────
-  if (hrvTrend && hrvTrend.length >= 3) {
-    const hrvAvg = hrvTrend.reduce((a, b) => a + b, 0) / hrvTrend.length
-    const currentHRV = hrv
-    const hrvDrop = ((hrvAvg - currentHRV) / hrvAvg) * 100
-    const hrvRise = ((currentHRV - hrvAvg) / hrvAvg) * 100
-
-    if (hrvDrop >= 20) {
-      result.intensity = Math.max(1, result.intensity - 3)
-      result.flags.push('LOW_HRV')
-      result.reasons.push(`HRV ${Math.round(hrvDrop)}% below baseline — reduced intensity`)
-    }
-
-    if (hrvRise >= 10 && sleepHrs >= 7) {
-      result.ardenState = 'full_intensity'
-      result.intensity = 10
-      result.flags.push('HIGH_HRV')
-      result.reasons.push(`HRV above baseline + good sleep — green light for hard session`)
-      result.subtitle = 'HRV up, sleep solid. Green light — push today.'
-      result.todayPlan = 'Full intensity'
-    }
-  }
-
-  // ── RESPIRATORY RATE CHECK ───────────────────────────────
-  if (respiratoryRate) {
-    if (respiratoryRate > 18) {
-      result.flags.push('ELEVATED_RESPIRATORY')
-      result.intensity = Math.max(1, result.intensity - 2)
-      result.reasons.push(`Elevated respiratory rate (${respiratoryRate} br/min) — possible stress or illness`)
-    }
-  }
-
-  // ── STREAK BONUS ─────────────────────────────────────────
-  if (streak >= 3 && result.intensity >= 7) {
-    result.flags.push('ON_A_STREAK')
-    result.reasons.push(`${streak} day streak — consistency is building something`)
-  }
-
-  // ── FINAL STATE ASSIGNMENT ───────────────────────────────
-  if (result.flags.length === 0) {
-    if (sleepHrs >= 7) {
-      result.ardenState = 'full_intensity'
-      result.subtitle = "Data looks good. Full session today."
-      result.todayPlan = 'Full intensity'
-    } else {
-      result.ardenState = 'ready'
-      result.subtitle = "Moderate sleep. Good enough — let's move."
-      result.todayPlan = 'Moderate intensity'
-    }
-  }
-
-  // ── INTENSITY → ARDEN STATE FALLBACK ────────────────────
-  if (!result.flags.includes('HIGH_HRV') &&
-      !result.flags.includes('ELEVATED_HR') &&
-      !result.flags.includes('CRITICAL_SLEEP') &&
-      !result.flags.includes('LOW_SLEEP')) {
-    if (result.intensity <= 4) result.ardenState = 'low_sleep'
-    else if (result.intensity <= 7) result.ardenState = 'ready'
-    else result.ardenState = 'full_intensity'
-  }
-
-  // ── SUBTITLE BY INTENSITY ────────────────────────────────
-  if (result.intensity <= 5 && result.intensity > 3) {
-    result.subtitle = "Data says take it easy today. Moderate session only."
-    result.ardenState = 'low_sleep'
-  } else if (result.intensity <= 7 && result.intensity > 5) {
-    result.subtitle = "Decent data. Solid session, don't push the ceiling."
-    result.ardenState = 'ready'
-  }
-
-  return result
 }

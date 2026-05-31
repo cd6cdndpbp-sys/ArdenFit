@@ -14,6 +14,9 @@ const useHealthData = () => {
         const res = await fetch(API_URL)
         const json = await res.json()
         const metrics = json.data?.metrics || []
+        console.log('available metrics:', JSON.stringify(metrics.map(m => m.name)))
+        const _wm = metrics.find(m => m.name === 'weight_body_mass')
+        console.log('weight metric:', _wm?.name ?? 'not found', '| latest:', _wm?.data?.[_wm.data.length - 1]?.qty ?? 'n/a')
 
         const getMetric = (name) => metrics.find(m => m.name === name)
 
@@ -27,10 +30,13 @@ const useHealthData = () => {
         const hrvValue = hrv?.data?.[hrv.data.length - 1]?.qty || null
 
         const steps = getMetric('step_count')
-        const today = new Date().toISOString().split('T')[0]
+        const _now = new Date()
+        const localToday = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`
+        const today = localToday
         const stepsToday = steps?.data
-          ?.filter(d => d.date?.startsWith(today))
+          ?.filter(d => d.date?.startsWith(localToday))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
+        console.log('Steps today:', stepsToday, 'localToday:', localToday, 'sample dates:', steps?.data?.slice(-3).map(d => d.date))
 
         const hrTrend = restingHR_metric?.data?.slice(-7).map(d => d.qty) || []
         const hrvTrend = hrv?.data?.slice(-7).map(d => d.qty) || []
@@ -97,6 +103,9 @@ const useHealthData = () => {
         const distanceToday = walkingDistance?.data
           ?.filter(d => d.date?.startsWith(today))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
+
+        const weightMetric = getMetric('weight_body_mass')
+        const latestWeight = weightMetric?.data?.[weightMetric.data.length - 1]?.qty ?? null
 
         // ── 7-DAY SUMMARY ────────────────────────────────────────
 
@@ -199,12 +208,15 @@ const useHealthData = () => {
           activeEnergyToday: Math.round(activEnergyToday),
           activeEnergyYesterday: Math.round(activeEnergyYesterday),
           exerciseToday: Math.round(exerciseToday),
+          todayExerciseMinutes: Math.round(exerciseToday),
+          todayWorkoutComplete: exerciseToday >= 20,
           exerciseLast7,
           streak,
           respiratoryRate: respiratoryRateValue ? Math.round(respiratoryRateValue * 10) / 10 : null,
           respiratoryTrend,
           hrSevenDayAvg,
           distanceToday: Math.round(distanceToday * 10) / 10,
+          currentWeight: latestWeight ? Math.round(latestWeight * 10) / 10 : null,
           weekSummary: {
             avgSleep:           avgSleepWeek,
             nightsUnder7,

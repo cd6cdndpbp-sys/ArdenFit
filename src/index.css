@@ -49,6 +49,14 @@ body {
 .rest-day-stretches { display: block; }
 @media (max-width: 600px) { .rest-day-stretches { display: none; } }
 
+.plan-week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 600px) { .plan-week-grid { grid-template-columns: 1fr; } }
+
+.race-pills { display: flex; gap: 6px; }
+@media (max-width: 600px) {
+  .race-pills span { font-size: 11px !important; padding: 4px 8px !important; white-space: nowrap; }
+}
+
 .metric-cards-grid {
   grid-template-columns: 2fr 1fr 1fr;
 }

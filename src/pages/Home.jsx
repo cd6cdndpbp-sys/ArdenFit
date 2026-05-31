@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import DashboardHeader from '../components/DashboardHeader'
 import MetricCards from '../components/MetricCards'
-import BottomRow from '../components/BottomRow'
+import TrainingPlanCard from '../components/TrainingPlanCard'
+import WeeklySummary from '../components/WeeklySummary'
+import { RaceCard } from '../components/BottomRow'
 import useHealthData from '../hooks/useHealthData'
 import useTheme from '../hooks/useTheme'
 import { runDecisionEngine } from '../utils/decisionEngine'
@@ -55,13 +57,13 @@ function Home() {
           healthData={healthData}
         />
         <MetricCards healthData={loading ? null : healthData} theme={theme} />
-        <BottomRow
-          theme={theme}
-          decision={decision}
-          streak={healthData?.streak}
-          weekSummary={healthData?.weekSummary}
-          todaysPlan={todaysPlan}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 14px 14px' }}>
+          <div className="plan-week-grid">
+            <TrainingPlanCard theme={theme} healthData={healthData} />
+            <WeeklySummary weekSummary={healthData?.weekSummary} theme={theme} streak={healthData?.streak} />
+          </div>
+          <RaceCard theme={theme} healthData={healthData} />
+        </div>
       </div>
     </main>
   )

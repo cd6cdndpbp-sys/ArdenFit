@@ -339,9 +339,11 @@ export default function WorkoutView() {
       .map((ex, i) => ({ exerciseName: ex.name, type: exerciseStates[i]?.modification }))
       .filter(m => m.type != null)
 
+    const _d = new Date()
+    const localDate = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`
     saveWorkoutLog({
       id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
+      date: localDate,
       type: workout.type,
       plannedDuration: workout.duration,
       actualDuration,
