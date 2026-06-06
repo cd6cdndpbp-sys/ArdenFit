@@ -57,6 +57,9 @@ function Home() {
           theme={theme}
           healthData={healthData}
         />
+        <div style={{ padding: '10px 14px 0' }}>
+          <CoachingSummary theme={theme} healthData={healthData} />
+        </div>
         <MetricCards healthData={loading ? null : healthData} theme={theme} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 14px 14px' }}>
           <div className="plan-week-grid">
@@ -64,7 +67,6 @@ function Home() {
             <WeeklySummary weekSummary={healthData?.weekSummary} theme={theme} streak={healthData?.streak} />
           </div>
           <RaceCard theme={theme} healthData={healthData} />
-          <CoachingSummary theme={theme} healthData={healthData} />
         </div>
       </div>
     </main>

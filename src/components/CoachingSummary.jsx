@@ -6,11 +6,13 @@ const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 export default function CoachingSummary({ theme, healthData }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!healthData) return
     generateCoachingSummary(healthData)
       .then(setSummary)
+      .catch(err => { console.error('[CoachingSummary]', err); setError(err.message) })
       .finally(() => setLoading(false))
   }, [!!healthData])
 
@@ -33,6 +35,14 @@ export default function CoachingSummary({ theme, healthData }) {
       {loading ? (
         <div style={{ fontSize: '13px', color: theme.textMuted, fontStyle: 'italic' }}>
           Arden is thinking...
+        </div>
+      ) : error ? (
+        <div style={{ fontSize: '12px', color: theme.textMuted, fontStyle: 'italic' }}>
+          {error}
+        </div>
+      ) : !summary ? (
+        <div style={{ fontSize: '13px', color: theme.textMuted, fontStyle: 'italic' }}>
+          Check back after 5pm.
         </div>
       ) : (
         <div style={{ fontSize: '14px', color: theme.textSecondary, lineHeight: 1.6 }}>

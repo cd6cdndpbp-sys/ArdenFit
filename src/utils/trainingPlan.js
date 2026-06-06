@@ -131,6 +131,22 @@ export function getTodaysPlan() {
   }
 }
 
+export function getTomorrowsPlan() {
+  const phase = getCurrentPhase()
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const dayKey = tomorrow.toLocaleDateString('en-US', { weekday: 'long' }).slice(0, 3)
+  const day = phase.weeklyStructure[dayKey]
+  if (!day) return null
+  return {
+    ...day,
+    phase:         phase.shortName,
+    phaseName:     phase.name,
+    phaseGoal:     phase.goal,
+    nutritionNote: phase.nutritionNote,
+  }
+}
+
 export function getWeekPlan() {
   const phase = getCurrentPhase()
   return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({

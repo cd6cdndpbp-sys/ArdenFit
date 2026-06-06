@@ -62,6 +62,23 @@ app.post('/api/health', (req, res) => {
   res.json({ success: true })
 })
 
+app.post('/api/coaching', async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' })
+
+  const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(req.body),
+  })
+  const data = await upstream.json()
+  res.json(data)
+})
+
 app.get('/api/health', (req, res) => {
   if (fs.existsSync(DATA_FILE)) {
     const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
