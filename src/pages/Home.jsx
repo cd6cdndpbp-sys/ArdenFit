@@ -5,6 +5,7 @@ import MetricCards from '../components/MetricCards'
 import TrainingPlanCard from '../components/TrainingPlanCard'
 import WeeklySummary from '../components/WeeklySummary'
 import { RaceCard } from '../components/BottomRow'
+import CoachingSummary from '../components/CoachingSummary'
 import useHealthData from '../hooks/useHealthData'
 import useTheme from '../hooks/useTheme'
 import { runDecisionEngine } from '../utils/decisionEngine'
@@ -63,6 +64,7 @@ function Home() {
             <WeeklySummary weekSummary={healthData?.weekSummary} theme={theme} streak={healthData?.streak} />
           </div>
           <RaceCard theme={theme} healthData={healthData} />
+          <CoachingSummary theme={theme} healthData={healthData} />
         </div>
       </div>
     </main>

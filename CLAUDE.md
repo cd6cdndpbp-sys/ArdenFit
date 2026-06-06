@@ -69,6 +69,16 @@ Filter by date using `.startsWith(localDate)` with the local date string above.
 
 - `ardenfit_workout_log` — workout logs (read/write via `workoutLogger.js`)
 - `ardenfit_races` — race entries (read/write via `raceManager.js`)
+- `ardenfit_coaching_summary` — `{ date: 'YYYY-MM-DD', summary: '...' }` — daily AI coaching note, cached by local date
+
+## AI coaching summary
+
+`src/utils/coachingSummary.js` calls the Anthropic API once per day via `generateCoachingSummary(healthData)`.
+
+- Model: `claude-haiku-4-5-20251001`
+- API key: `VITE_ANTHROPIC_API_KEY` in `.env` (never commit `.env`)
+- **Always check cache first** — if `ardenfit_coaching_summary.date` matches today's local date, return the cached string immediately. Never call the API on every render.
+- Rendered by `src/components/CoachingSummary.jsx` — desktop only (`coaching-summary-card` CSS class, hidden at `max-width: 600px`)
 
 ## Server
 

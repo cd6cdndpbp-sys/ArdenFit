@@ -52,6 +52,9 @@ body {
 .plan-week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 600px) { .plan-week-grid { grid-template-columns: 1fr; } }
 
+.coaching-summary-card { display: block; }
+@media (max-width: 600px) { .coaching-summary-card { display: none; } }
+
 .race-pills { display: flex; gap: 6px; }
 @media (max-width: 600px) {
   .race-pills span { font-size: 11px !important; padding: 4px 8px !important; white-space: nowrap; }

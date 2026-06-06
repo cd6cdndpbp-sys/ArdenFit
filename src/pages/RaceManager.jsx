@@ -2,25 +2,58 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useTheme from '../hooks/useTheme'
 import {
-  getRaces, addRace, deleteRace, setPrimaryRace,
-  getDaysUntil, getProgressPercent,
+  getRaces, addRace, updateRace, deleteRace, setPrimaryRace,
+  getDaysUntil, getProgressPercent, RACE_DISTANCES,
 } from '../utils/raceManager'
 
-const EMPTY_FORM = { name: '', date: '', location: '', distance: '', goal: '', primary: false }
+const EMPTY_FORM = { name: '', date: '', location: '', distance: '', goalHH: '', goalMM: '', goalSS: '', primary: false }
 
 const formatDate = (dateStr) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
   })
 
+const fmtGoal = (secs) => {
+  const h = Math.floor(secs / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  const s = secs % 60
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+const secsToFormFields = (secs) => ({
+  goalHH: String(Math.floor(secs / 3600)),
+  goalMM: String(Math.floor((secs % 3600) / 60)),
+  goalSS: String(secs % 60),
+})
+
 export default function RaceManager() {
   const navigate  = useNavigate()
   const theme     = useTheme()
   const [races, setRaces]       = useState(getRaces)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form, setForm]         = useState(EMPTY_FORM)
 
   const refresh = () => setRaces(getRaces())
+
+  const handleEdit = (race) => {
+    setForm({
+      name:     race.name,
+      date:     race.date,
+      location: race.location || '',
+      distance: race.distance || '',
+      primary:  race.primary,
+      ...(race.goalSeconds > 0 ? secsToFormFields(race.goalSeconds) : { goalHH: '', goalMM: '', goalSS: '' }),
+    })
+    setEditingId(race.id)
+    setShowForm(true)
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(EMPTY_FORM)
+  }
 
   const handleDelete = (id, name) => {
     if (!window.confirm(`Delete "${name}"?`)) return
@@ -33,11 +66,18 @@ export default function RaceManager() {
     refresh()
   }
 
+  const goalSeconds = parseInt(form.goalHH || 0) * 3600 + parseInt(form.goalMM || 0) * 60 + parseInt(form.goalSS || 0)
+  const canSave = !!(form.name && form.date && form.distance && goalSeconds > 0)
+
   const handleSave = () => {
-    if (!form.name || !form.date) return
-    addRace({ ...form })
-    setForm(EMPTY_FORM)
-    setShowForm(false)
+    if (!canSave) return
+    const data = { name: form.name, date: form.date, location: form.location, distance: form.distance, goalSeconds, primary: form.primary }
+    if (editingId != null) {
+      updateRace(editingId, data)
+    } else {
+      addRace(data)
+    }
+    handleCloseForm()
     refresh()
   }
 
@@ -137,9 +177,9 @@ export default function RaceManager() {
               </div>
 
               {/* Goal */}
-              {race.goal && (
+              {race.goalSeconds > 0 && (
                 <div style={{ fontSize: '13px', color: theme.accentText, fontStyle: 'italic', marginTop: '4px' }}>
-                  Goal: {race.goal}
+                  Goal: {fmtGoal(race.goalSeconds)}
                 </div>
               )}
 
@@ -175,6 +215,16 @@ export default function RaceManager() {
                     Set as Primary
                   </button>
                 )}
+                <button onClick={() => handleEdit(race)} style={{
+                  padding: '7px 14px',
+                  background: 'transparent',
+                  border: `0.5px solid ${theme.cardBorder}`,
+                  borderRadius: '8px',
+                  color: theme.textSecondary,
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                }}>
+                  Edit
+                </button>
                 <button onClick={() => handleDelete(race.id, race.name)} style={{
                   padding: '7px 14px',
                   background: 'transparent',
@@ -190,11 +240,11 @@ export default function RaceManager() {
           )
         })}
 
-        {/* Add race form */}
+        {/* Add / Edit race form */}
         {showForm ? (
           <div style={{ ...cardStyle, marginTop: '6px' }}>
             <div style={{ fontSize: '15px', fontWeight: 600, color: theme.textPrimary, marginBottom: '14px' }}>
-              Add Race
+              {editingId != null ? 'Edit Race' : 'Add Race'}
             </div>
 
             <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Race Name *</div>
@@ -221,21 +271,44 @@ export default function RaceManager() {
               onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
             />
 
-            <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Distance</div>
-            <input
-              style={inputStyle}
-              placeholder="Half Marathon, 10 Miles, 5K…"
+            <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Distance *</div>
+            <select
+              style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
               value={form.distance}
               onChange={e => setForm(f => ({ ...f, distance: e.target.value }))}
-            />
+            >
+              <option value="" disabled>Select distance…</option>
+              {RACE_DISTANCES.map(d => (
+                <option key={d.label} value={d.label}>{d.label}</option>
+              ))}
+            </select>
 
-            <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Goal (optional)</div>
-            <input
-              style={inputStyle}
-              placeholder="Sub 3:30, finish strong…"
-              value={form.goal}
-              onChange={e => setForm(f => ({ ...f, goal: e.target.value }))}
-            />
+            <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Goal Time * (H : MM : SS)</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+              <input
+                type="number" min="0" max="23"
+                placeholder="H"
+                style={{ ...inputStyle, width: '64px', marginBottom: 0, textAlign: 'center' }}
+                value={form.goalHH}
+                onChange={e => setForm(f => ({ ...f, goalHH: e.target.value }))}
+              />
+              <span style={{ color: theme.textMuted, fontSize: '18px', fontWeight: 300, lineHeight: 1 }}>:</span>
+              <input
+                type="number" min="0" max="59"
+                placeholder="MM"
+                style={{ ...inputStyle, width: '64px', marginBottom: 0, textAlign: 'center' }}
+                value={form.goalMM}
+                onChange={e => setForm(f => ({ ...f, goalMM: e.target.value }))}
+              />
+              <span style={{ color: theme.textMuted, fontSize: '18px', fontWeight: 300, lineHeight: 1 }}>:</span>
+              <input
+                type="number" min="0" max="59"
+                placeholder="SS"
+                style={{ ...inputStyle, width: '64px', marginBottom: 0, textAlign: 'center' }}
+                value={form.goalSS}
+                onChange={e => setForm(f => ({ ...f, goalSS: e.target.value }))}
+              />
+            </div>
 
             {/* Primary toggle */}
             <div
@@ -264,15 +337,15 @@ export default function RaceManager() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={handleSave} style={{
                 flex: 1, padding: '12px',
-                background: form.name && form.date ? theme.accent : theme.cardBorder,
-                color: form.name && form.date ? '#000' : theme.textMuted,
+                background: canSave ? theme.accent : theme.cardBorder,
+                color: canSave ? '#000' : theme.textMuted,
                 border: 'none', borderRadius: '8px',
-                fontSize: '14px', fontWeight: 700, cursor: form.name && form.date ? 'pointer' : 'default',
+                fontSize: '14px', fontWeight: 700, cursor: canSave ? 'pointer' : 'default',
                 transition: 'background-color 0.3s ease',
               }}>
                 Save Race
               </button>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM) }} style={{
+              <button onClick={handleCloseForm} style={{
                 padding: '12px 16px',
                 background: 'transparent',
                 border: `0.5px solid ${theme.cardBorder}`,

@@ -13,6 +13,7 @@ const useHealthData = () => {
         const res = await fetch(API_URL)
         const json = await res.json()
         const metrics = json.data?.metrics || []
+        const workouts = json.data?.workouts || []
         const _wm = metrics.find(m => m.name === 'weight_body_mass')
 
         const getMetric = (name) => metrics.find(m => m.name === name)
@@ -111,6 +112,26 @@ const useHealthData = () => {
           d.setDate(d.getDate() - i)
           last7Days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
         }
+
+        const last7Set = new Set(last7Days)
+        const qualifyingWorkoutPaces = workouts
+          .filter(w => {
+            if (!w.name?.match(/walk|run/i)) return false
+            if (!w.distance?.qty || w.distance.qty <= 0) return false
+            if (!w.duration || w.duration <= 600) return false
+            const workoutDate = w.start?.split(' ')[0]
+            return last7Set.has(workoutDate)
+          })
+          .map(w => {
+            const distanceMiles = w.distance.units === 'km'
+              ? w.distance.qty * 0.621371
+              : w.distance.qty
+            const durationMins = w.duration / 60
+            return durationMins / distanceMiles
+          })
+        const avgPaceMinPerMile = qualifyingWorkoutPaces.length >= 2
+          ? qualifyingWorkoutPaces.reduce((a, b) => a + b, 0) / qualifyingWorkoutPaces.length
+          : null
 
         const distanceLast7 = last7Days.map(date => {
           const dayMiles = walkingDistance?.data
@@ -232,6 +253,7 @@ const useHealthData = () => {
           hrSevenDayAvg,
           distanceToday: Math.round(distanceToday * 10) / 10,
           distanceLast7,
+          avgPaceMinPerMile,
           currentWeight: latestWeight ? Math.round(latestWeight * 10) / 10 : null,
           workoutsThisWeek,
           weekSummary: {

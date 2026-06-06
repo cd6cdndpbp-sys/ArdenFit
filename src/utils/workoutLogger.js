@@ -33,7 +33,6 @@ export function getTodayLog() {
   const today = localDateStr()
   const logs  = getWorkoutLogs()
   const match = logs.find(l => l.date === today) || null
-  console.log('Workout log check | comparing against:', today, '| logged dates:', logs.slice(0, 3).map(l => l.date), '| match:', !!match)
   return match
 }
 

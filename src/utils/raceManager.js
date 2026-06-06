@@ -1,3 +1,11 @@
+export const RACE_DISTANCES = [
+  { label: '5K',            miles: 3.107 },
+  { label: '10K',           miles: 6.214 },
+  { label: '10 Miles',      miles: 10.0  },
+  { label: 'Half Marathon', miles: 13.1  },
+  { label: 'Marathon',      miles: 26.2  },
+]
+
 function getDefaultRaces() {
   return [
     {
@@ -6,7 +14,7 @@ function getDefaultRaces() {
       date: '2027-05-17',
       location: 'Fredericksburg, VA',
       distance: 'Half Marathon',
-      goal: 'Sub 3:30',
+      goalSeconds: 12600,
       primary: false,
     },
     {
@@ -15,7 +23,7 @@ function getDefaultRaces() {
       date: '2026-10-11',
       location: 'Washington, DC',
       distance: '10 Miles',
-      goal: 'Finish strong',
+      goalSeconds: 9000,
       primary: true,
     },
   ]
@@ -23,7 +31,13 @@ function getDefaultRaces() {
 
 export function getRaces() {
   try {
-    return JSON.parse(localStorage.getItem('ardenfit_races')) || getDefaultRaces()
+    const races = JSON.parse(localStorage.getItem('ardenfit_races')) || getDefaultRaces()
+    // migrate races saved before goalSeconds field existed
+    return races.map(r => {
+      if (r.goalSeconds != null) return r
+      const parts = r.goal?.match(/(\d+):(\d+)/)
+      return { ...r, goalSeconds: parts ? parseInt(parts[1]) * 3600 + parseInt(parts[2]) * 60 : 0 }
+    })
   } catch { return getDefaultRaces() }
 }
 
@@ -36,6 +50,10 @@ export function addRace(race) {
   race.id = Date.now()
   races.push(race)
   saveRaces(races)
+}
+
+export function updateRace(id, data) {
+  saveRaces(getRaces().map(r => r.id === id ? { ...r, ...data, id } : r))
 }
 
 export function deleteRace(id) {

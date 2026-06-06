@@ -18,8 +18,10 @@ app.post('/api/health', (req, res) => {
   if (fs.existsSync(DATA_FILE)) {
     existing = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
   }
+  if (existing.data && !existing.data.workouts) existing.data.workouts = []
 
   const merged = { ...existing }
+
   if (incoming.data?.metrics) {
     merged.data = merged.data || {}
     merged.data.metrics = merged.data.metrics || []
@@ -38,6 +40,19 @@ app.post('/api/health', (req, res) => {
         })
       } else {
         merged.data.metrics.push(incomingMetric)
+      }
+    })
+  }
+
+  if (incoming.data?.workouts) {
+    merged.data = merged.data || {}
+    merged.data.workouts = merged.data.workouts || []
+
+    const existingIds = new Set(merged.data.workouts.map(w => w.id))
+    incoming.data.workouts.forEach(w => {
+      if (!existingIds.has(w.id)) {
+        merged.data.workouts.push(w)
+        existingIds.add(w.id)
       }
     })
   }
