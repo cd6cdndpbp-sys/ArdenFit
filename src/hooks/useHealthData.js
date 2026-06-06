@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { getWorkoutLogs } from '../utils/workoutLogger'
 
 const useHealthData = () => {
   const [healthData, setHealthData] = useState(null)
@@ -14,9 +13,7 @@ const useHealthData = () => {
         const res = await fetch(API_URL)
         const json = await res.json()
         const metrics = json.data?.metrics || []
-        console.log('available metrics:', JSON.stringify(metrics.map(m => m.name)))
         const _wm = metrics.find(m => m.name === 'weight_body_mass')
-        console.log('weight metric:', _wm?.name ?? 'not found', '| latest:', _wm?.data?.[_wm.data.length - 1]?.qty ?? 'n/a')
 
         const getMetric = (name) => metrics.find(m => m.name === name)
 
@@ -36,7 +33,6 @@ const useHealthData = () => {
         const stepsToday = steps?.data
           ?.filter(d => d.date?.startsWith(localToday))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
-        console.log('Steps today:', stepsToday, 'localToday:', localToday, 'sample dates:', steps?.data?.slice(-3).map(d => d.date))
 
         const hrTrend = restingHR_metric?.data?.slice(-7).map(d => d.qty) || []
         const hrvTrend = hrv?.data?.slice(-7).map(d => d.qty) || []
@@ -48,7 +44,7 @@ const useHealthData = () => {
 
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`
         const activeEnergyYesterday = activeEnergy?.data
           ?.filter(d => d.date?.startsWith(yesterdayStr))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
@@ -62,7 +58,7 @@ const useHealthData = () => {
         for (let i = 6; i >= 0; i--) {
           const d = new Date()
           d.setDate(d.getDate() - i)
-          const dateStr = d.toISOString().split('T')[0]
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
           const dayMins = exerciseMinutes?.data
             ?.filter(e => e.date?.startsWith(dateStr))
             ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
@@ -73,7 +69,7 @@ const useHealthData = () => {
         for (let i = 29; i >= 0; i--) {
           const d = new Date()
           d.setDate(d.getDate() - i)
-          const dateStr = d.toISOString().split('T')[0]
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
           const dayMins = exerciseMinutes?.data
             ?.filter(e => e.date?.startsWith(dateStr))
             ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
@@ -113,8 +109,15 @@ const useHealthData = () => {
         for (let i = 6; i >= 0; i--) {
           const d = new Date()
           d.setDate(d.getDate() - i)
-          last7Days.push(d.toISOString().split('T')[0])
+          last7Days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
         }
+
+        const distanceLast7 = last7Days.map(date => {
+          const dayMiles = walkingDistance?.data
+            ?.filter(d => d.date?.startsWith(date))
+            ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
+          return { date, miles: Math.round(dayMiles * 100) / 100 }
+        })
 
         // Sleep last 7 nights
         const sleepLast7 = last7Days.map(date => {
@@ -168,18 +171,30 @@ const useHealthData = () => {
         )
         const totalActiveEnergyWeek = activeEnergyLast7.reduce((sum, d) => sum + d.kcal, 0)
 
-        // Workouts this week from workout logs
-        const workoutLogs = getWorkoutLogs()
-        const workoutsThisWeek = last7Days.filter(date =>
-          workoutLogs.find(l => l.date === date && l.completed)
-        ).length
+        // Workouts this Mon-Sun week from Apple Health (>= 20 exercise minutes)
+        const _dow = _now.getDay()
+        const _mondayOffset = _dow === 0 ? -6 : 1 - _dow
+        const _monday = new Date(_now)
+        _monday.setDate(_now.getDate() + _mondayOffset)
+        const currentWeekDays = []
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(_monday)
+          d.setDate(_monday.getDate() + i)
+          currentWeekDays.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
+        }
+        const workoutsThisWeek = currentWeekDays.filter(date => {
+          const dayMins = exerciseMinutes?.data
+            ?.filter(e => e.date?.startsWith(date))
+            ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
+          return dayMins >= 20
+        }).length
 
         // Sleep trend vs prior week
         const prior7Days = []
         for (let i = 13; i >= 7; i--) {
           const d = new Date()
           d.setDate(d.getDate() - i)
-          prior7Days.push(d.toISOString().split('T')[0])
+          prior7Days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
         }
         const priorSleepValues = prior7Days.map(date => {
           const entry = sleep?.data?.find(d => d.date?.startsWith(date))
@@ -216,7 +231,9 @@ const useHealthData = () => {
           respiratoryTrend,
           hrSevenDayAvg,
           distanceToday: Math.round(distanceToday * 10) / 10,
+          distanceLast7,
           currentWeight: latestWeight ? Math.round(latestWeight * 10) / 10 : null,
+          workoutsThisWeek,
           weekSummary: {
             avgSleep:           avgSleepWeek,
             nightsUnder7,

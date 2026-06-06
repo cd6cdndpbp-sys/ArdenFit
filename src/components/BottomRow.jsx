@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { getNextRace, getDaysUntil } from '../utils/raceManager'
+import { getNextRace, getDaysUntil, RACE_DISTANCES } from '../utils/raceManager'
 import { getCurrentPhase } from '../utils/trainingPlan'
 import WeeklySummary from './WeeklySummary'
 import TrainingPlanCard from './TrainingPlanCard'
@@ -193,9 +193,6 @@ function TomorrowCard({ theme, decision, todaysPlan }) {
 }
 
 
-const RACE_DIST_MI = 13.1
-const GOAL_MIN     = 210   // 3:30:00
-
 const fmtFinish = (mins) => {
   const h = Math.floor(mins / 60)
   const m = Math.round(mins % 60)
@@ -214,15 +211,26 @@ export function RaceCard({ theme, healthData }) {
   const daysUntil  = nextRace ? getDaysUntil(nextRace.date) : null
   const phase      = getCurrentPhase()
 
-  const hasPace       = (healthData?.distanceToday ?? 0) > 0.5 && (healthData?.exerciseToday ?? 0) > 5
+  const raceMiles      = RACE_DISTANCES.find(d => d.label === nextRace?.distance)?.miles ?? 13.1
+  const goalMin        = nextRace?.goalSeconds > 0 ? nextRace.goalSeconds / 60 : null
+
+  const exerciseLast7  = healthData?.exerciseLast7 ?? []
+  const distanceLast7  = healthData?.distanceLast7 ?? []
+  const qualifyingDays = exerciseLast7
+    .map(exDay => {
+      const distDay = distanceLast7.find(d => d.date === exDay.date)
+      return { mins: exDay.mins, miles: distDay?.miles ?? 0 }
+    })
+    .filter(d => d.mins >= 20 && d.miles > 0)
+  const hasPace        = qualifyingDays.length >= 2
   const paceMinPerMile = hasPace
-    ? healthData.exerciseToday / healthData.distanceToday
+    ? qualifyingDays.reduce((sum, d) => sum + d.mins / d.miles, 0) / qualifyingDays.length
     : 20.0
-  const estFinishMin   = paceMinPerMile * RACE_DIST_MI
-  const diffMin        = Math.round(estFinishMin - GOAL_MIN)
-  const isOverGoal     = diffMin > 0
-  const finishColor    = isOverGoal ? '#f59e0b' : '#3ecf8e'
-  const barPct         = Math.min(Math.round((estFinishMin / GOAL_MIN) * 100), 100)
+  const estFinishMin   = paceMinPerMile * raceMiles
+  const diffMin        = goalMin != null ? Math.round(estFinishMin - goalMin) : null
+  const isOverGoal     = diffMin != null && diffMin > 0
+  const finishColor    = (diffMin == null || isOverGoal) ? '#f59e0b' : '#3ecf8e'
+  const barPct         = goalMin != null ? Math.min(Math.round((estFinishMin / goalMin) * 100), 100) : null
 
   if (!nextRace) return null
 
@@ -250,9 +258,9 @@ export function RaceCard({ theme, healthData }) {
           <div style={{ fontSize: '13px', color: theme.textSecondary, marginTop: '2px' }}>
             {[nextRace.distance, nextRace.location].filter(Boolean).join(' · ')}
           </div>
-          {nextRace.goal && (
+          {(nextRace.goalSeconds > 0 || nextRace.goal) && (
             <div style={{ fontSize: '13px', color: theme.accentText, fontStyle: 'italic', marginTop: '3px', transition: 'color 1.5s ease' }}>
-              {nextRace.goal}
+              {nextRace.goalSeconds > 0 ? `Goal: ${fmtFinish(nextRace.goalSeconds / 60)}` : nextRace.goal}
             </div>
           )}
           <div className="race-pills" style={{ marginTop: '10px' }}>
@@ -284,23 +292,27 @@ export function RaceCard({ theme, healthData }) {
             {fmtFinish(estFinishMin)}
           </div>
           <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '2px', marginBottom: '10px' }}>
-            {fmtPace(paceMinPerMile)}/mi {hasPace ? 'current pace' : '(default)'}
+            {fmtPace(paceMinPerMile)}/mi {hasPace ? '7-day avg' : '(default)'}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
-            <span>Sub 3:30 goal</span>
-            <span style={{ color: isOverGoal ? '#f59e0b' : '#3ecf8e' }}>
-              {isOverGoal ? `${diffMin} min over` : `${Math.abs(diffMin)} min under`}
-            </span>
-          </div>
-          <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
-            <div style={{
-              width:      `${barPct}%`,
-              height:     '100%',
-              background: finishColor,
-              borderRadius: '2px',
-            transition: 'background-color 1.5s ease',
-          }} />
-          </div>
+          {goalMin != null && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
+                <span>Goal {fmtFinish(goalMin)}</span>
+                <span style={{ color: isOverGoal ? '#f59e0b' : '#3ecf8e' }}>
+                  {isOverGoal ? `${diffMin} min over` : `${Math.abs(diffMin)} min under`}
+                </span>
+              </div>
+              <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
+                <div style={{
+                  width:      `${barPct}%`,
+                  height:     '100%',
+                  background: finishColor,
+                  borderRadius: '2px',
+                  transition: 'background-color 1.5s ease',
+                }} />
+              </div>
+            </>
+          )}
         </div>
 
       </div>
