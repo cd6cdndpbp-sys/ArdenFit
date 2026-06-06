@@ -11,8 +11,9 @@ export function runDecisionEngine(healthData) {
   const seed = _t.getFullYear() * 10000 + (_t.getMonth() + 1) * 100 + _t.getDate()
   const idx  = seed % 4
 
-  // sleepLast7 is oldest→newest; exclude today (last entry) since it's incomplete
-  const sleepNights = (healthData.weekSummary?.sleepLast7 ?? []).slice(0, -1).reverse()
+  // sleepLast7 is oldest→newest; reverse so [0] = most recent night
+  // Apple Health records sleep with the morning date (session end), so today's entry is last night's completed sleep
+  const sleepNights = (healthData.weekSummary?.sleepLast7 ?? []).slice().reverse()
 
   // 1. SLEEP TIME — highest priority
   if (hour >= 19 || hour < 4) {
@@ -31,7 +32,7 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 2. CONSECUTIVE POOR SLEEP — 3+ nights under 6h
+  // 2. CONSECUTIVE POOR SLEEP — 3+ nights under 6h (checked before single-night so AS6 can fire)
   let poorNights = 0
   for (const { hours } of sleepNights) {
     if (hours != null && hours < 6) poorNights++
@@ -53,7 +54,25 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 3. REST DAY
+  // 3. LAST NIGHT POOR SLEEP — overrides workout completion
+  const lastNightSleep = sleepNights[0]?.hours ?? null
+  if (lastNightSleep != null && lastNightSleep < 6) {
+    const subtitles = [
+      `Only ${lastNightSleep}h last night. Recovery comes first.`,
+      `${lastNightSleep}h isn't enough. Take it easy today.`,
+      `Short night. Protect your recovery today.`,
+      `Low sleep last night. Your body needs the energy back.`,
+    ]
+    return {
+      ardenState: 'low_sleep',
+      intensity:  2,
+      flags:      ['POOR_SLEEP'],
+      reasons:    [`Only ${lastNightSleep}h sleep last night — recovery priority.`],
+      subtitle:   subtitles[idx],
+    }
+  }
+
+  // 4. REST DAY
   if (todayPlan?.type === 'rest') {
     const subtitles = [
       "Rest day. Recovery is part of the plan.",
@@ -70,7 +89,7 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 4. WORKOUT COMPLETE
+  // 5. WORKOUT COMPLETE
   if (todayComplete) {
     const subtitles = [
       "Workout logged. That's what consistency looks like.",
@@ -88,7 +107,7 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 5. DEFAULT — ready to train
+  // 6. DEFAULT — ready to train
   const subtitles = [
     "Let's get after it.",
     "Data looks good. Your move.",
