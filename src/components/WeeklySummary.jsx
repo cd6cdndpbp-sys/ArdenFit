@@ -11,8 +11,8 @@ function SlimSleepSparkline({ sleepLast7, theme }) {
         {sleepLast7.map(({ date, hours }) => {
           const barH     = hours ? Math.max(2, Math.round((Math.min(hours, 9) / 9) * 180)) : 3
           const barColor = !hours ? theme.cardBorder
-            : hours >= 7 ? theme.accent
-            : hours >= 6 ? '#888'
+            : hours >= 6.5 ? theme.accent
+            : hours >= 5.5 ? '#888'
             : '#e05555'
           const dayLabel = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })
           return (
@@ -49,7 +49,7 @@ export default function WeeklySummary({ weekSummary, theme, streak }) {
   }
 
   const {
-    avgSleep, nightsUnder7, sleepTrend, sleepLast7,
+    avgSleep, nightsUnder6, sleepTrend, sleepLast7,
     avgSteps, avgHRV, avgActiveEnergy,
     workoutsCompleted, workoutsPlanned,
   } = weekSummary
@@ -58,7 +58,7 @@ export default function WeeklySummary({ weekSummary, theme, streak }) {
     : sleepTrend === 'down' ? { char: '↓', color: '#f0a030' }
     : { char: '→', color: theme.textMuted }
 
-  const sleepColor   = avgSleep >= 7 ? theme.accent : avgSleep >= 6 ? theme.textPrimary : '#f0a030'
+  const sleepColor   = avgSleep >= 6.5 ? theme.accent : avgSleep >= 5.5 ? theme.textPrimary : '#f0a030'
   const workoutColor = workoutsCompleted >= workoutsPlanned ? theme.accent : theme.textPrimary
 
   const stats = [
@@ -71,8 +71,8 @@ export default function WeeklySummary({ weekSummary, theme, streak }) {
   ]
 
   const flags = []
-  if (avgSleep != null && avgSleep < 7) {
-    flags.push(`⚠ Avg sleep ${avgSleep}h this week. ${nightsUnder7} night${nightsUnder7 !== 1 ? 's' : ''} under 7h. This is suppressing recovery — prioritize sleep.`)
+  if (avgSleep != null && avgSleep < 5.5) {
+    flags.push(`⚠ Avg sleep ${avgSleep}h this week. ${nightsUnder6} night${nightsUnder6 !== 1 ? 's' : ''} under 5.5h. Recovery is compromised — protect sleep tonight.`)
   }
   if (workoutsCompleted === 0) {
     flags.push('⚠ No logged workouts this week. Even a short session counts.')

@@ -17,7 +17,7 @@ function consecutivePoorSleepNights(sleepLast7) {
   const nights = [...(sleepLast7 ?? [])].reverse()
   let count = 0
   for (const { hours } of nights) {
-    if (hours != null && hours < 6) count++
+    if (hours != null && hours < 5.5) count++
     else break
   }
   return count
@@ -41,7 +41,7 @@ function buildPayload(healthData) {
     sleepLastNight:          healthData.sleep?.total ?? null,
     sleepWeekAvg:            healthData.weekSummary?.avgSleep ?? null,
     sleepTrend:              healthData.weekSummary?.sleepTrend ?? 'flat',
-    nightsUnder7:            healthData.weekSummary?.nightsUnder7 ?? null,
+    nightsUnder6:            healthData.weekSummary?.nightsUnder6 ?? null,
     consecutivePoorNights:   poorNights,
     hrvToday:                healthData.hrv ?? null,
     hrvBaseline,
@@ -81,17 +81,13 @@ export async function generateCoachingSummary(healthData) {
 
   const payload = buildPayload(healthData)
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:3001/api/coaching'
-    : 'http://192.168.1.221:3001/api/coaching'
-
-  const res = await fetch(API_URL, {
+  const res = await fetch('http://192.168.1.221:3001/api/coaching', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 200,
-      system: `You are Arden — a training partner and coach inside a personal fitness dashboard. Write an evening summary for one specific person. You know them well. Be direct, clear-eyed, and supportive without being a cheerleader.
+      max_tokens: 300,
+      system: `You are Arden — a training partner and coach inside a personal fitness dashboard. Write an evening summary for one specific person. You know them well. Be direct, clear-eyed, and supportive.
 
 HARD CONSTRAINTS — never violate:
 - Condition: FSHD (facioscapulohumeral muscular dystrophy)
@@ -110,16 +106,19 @@ CURRENT PHASE: Phase 1 — weight loss + movement habit
 
 DECISION LOGIC — apply before writing:
 - Sleep < 5h OR consecutive poor nights >= 3: recovery only tomorrow, say so plainly
-- Sleep 5-6h: reduced session tomorrow, name what that means
-- Sleep 6-7h: normal session
-- Sleep 7h+: full session, can push slightly
+- Sleep 5–5.5h: reduced session tomorrow, name what that means
+- Sleep 5.5–6.5h: normal session
+- Sleep 6.5h+: full session, can push slightly
 - HRV today 10%+ below baseline: back off tomorrow regardless of sleep
 - Resting HR 10%+ above baseline: flag it, back off tomorrow
 
-STRUCTURE — 3 sentences maximum:
-1. Week arc: what the sleep and HRV data says about how this week has gone for recovery (use actual numbers)
-2. Tomorrow: one specific prescription based on the plan and the data — name the session, any adjustment to it
-3. One priority for tonight or tomorrow morning if relevant
+STRUCTURE — hard limit 3 sentences, no exceptions:
+1. Week arc in one sentence: sleep average, HRV vs baseline, 
+   what it means. No more than this.
+2. Tomorrow in one sentence: name the session, one adjustment 
+   if warranted. Nothing else.
+3. One line for tonight if relevant. Optional.
+Total response must be under 100 words. Cut ruthlessly.
 
 VOICE:
 - Training partner who's seen the data and has something real to say
@@ -134,8 +133,13 @@ VOICE:
     }),
   })
 
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error?.message ?? err.error ?? `HTTP ${res.status}`)
+  }
   const data = await res.json()
   if (data.type === 'error') throw new Error(data.error?.message ?? JSON.stringify(data.error))
+  if (!data.content?.[0]?.text) throw new Error(`Unexpected response: ${JSON.stringify(data)}`)
   const summary = data.content[0].text
   localStorage.setItem(CACHE_KEY, JSON.stringify({ date: todayStr, summary }))
   return summary

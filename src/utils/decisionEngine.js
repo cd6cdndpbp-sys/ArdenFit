@@ -35,7 +35,7 @@ export function runDecisionEngine(healthData) {
   // 2. CONSECUTIVE POOR SLEEP — 3+ nights under 6h (checked before single-night so AS6 can fire)
   let poorNights = 0
   for (const { hours } of sleepNights) {
-    if (hours != null && hours < 6) poorNights++
+    if (hours != null && hours < 5.5) poorNights++
     else break
   }
   if (poorNights >= 3) {
@@ -49,14 +49,14 @@ export function runDecisionEngine(healthData) {
       ardenState: 'overtraining',
       intensity:  2,
       flags:      ['POOR_SLEEP_STREAK'],
-      reasons:    [`${poorNights} consecutive nights under 6h sleep — recovery priority.`],
+      reasons:    [`${poorNights} consecutive nights under 5.5h sleep — recovery priority.`],
       subtitle:   subtitles[idx],
     }
   }
 
   // 3. LAST NIGHT POOR SLEEP — overrides workout completion
   const lastNightSleep = sleepNights[0]?.hours ?? null
-  if (lastNightSleep != null && lastNightSleep < 6) {
+  if (lastNightSleep != null && lastNightSleep < 5.5) {
     const subtitles = [
       `Only ${lastNightSleep}h last night. Recovery comes first.`,
       `${lastNightSleep}h isn't enough. Take it easy today.`,

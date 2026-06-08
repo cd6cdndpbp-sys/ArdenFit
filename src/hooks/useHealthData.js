@@ -149,7 +149,7 @@ const useHealthData = () => {
         const avgSleepWeek = sleepValues.length > 0
           ? Math.round((sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length) * 10) / 10
           : null
-        const nightsUnder7 = sleepValues.filter(h => h < 7).length
+        const nightsUnder6 = sleepValues.filter(h => h < 5.5).length
 
         // Steps last 7 days
         const stepsLast7 = last7Days.map(date => {
@@ -258,7 +258,7 @@ const useHealthData = () => {
           workoutsThisWeek,
           weekSummary: {
             avgSleep:           avgSleepWeek,
-            nightsUnder7,
+            nightsUnder6,
             sleepTrend:         sleepTrendDirection,
             sleepLast7,
             avgSteps:           avgStepsWeek,
