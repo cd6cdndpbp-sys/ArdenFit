@@ -15,16 +15,16 @@ function getDefaultRaces() {
       location: 'Fredericksburg, VA',
       distance: 'Half Marathon',
       goalSeconds: 12600,
-      primary: false,
+      primary: true,
     },
     {
       id: 2,
       name: 'Army Ten Miler',
-      date: '2026-10-11',
+      date: '2027-10-11',
       location: 'Washington, DC',
       distance: '10 Miles',
       goalSeconds: 9000,
-      primary: true,
+      primary: false,
     },
   ]
 }

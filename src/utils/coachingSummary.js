@@ -1,5 +1,5 @@
 import { getNextRace, RACE_DISTANCES } from './raceManager'
-import { getTomorrowsPlan } from './trainingPlan'
+import { getTomorrowsPlan, getWeightTarget } from './trainingPlan'
 
 const CACHE_KEY = 'ardenfit_coaching_summary_evening'
 
@@ -51,8 +51,13 @@ function buildPayload(healthData) {
     exerciseMinutes:         healthData.exerciseToday ?? null,
     workoutsThisWeek:        healthData.weekSummary?.workoutsCompleted ?? null,
     currentWeight:           healthData.currentWeight ?? null,
-    weightTarget:            159,
-    weightTargetDate:        'Jul 15',
+    weightTarget:            getWeightTarget()?.targetWeight ?? null,
+    weightTargetDate:        getWeightTarget()?.targetDate ?? null,
+    dailyCalorieTarget:      '1,800-2,000',
+    dailyProteinTarget:      120,
+    dailyStepFloor:          5000,
+    stepsToday:              healthData.steps ?? null,
+    stepFloorMet:            (healthData.steps ?? 0) >= 5000,
     tomorrowPlan:            tomorrowDesc,
   }
 }
@@ -91,18 +96,26 @@ export async function generateCoachingSummary(healthData) {
 
 HARD CONSTRAINTS — never violate:
 - Condition: FSHD (facioscapulohumeral muscular dystrophy)
-- No running, jogging, sprinting, or "easy run" language — ever
-- Treadmill walking ONLY, max 3.6 mph
+- Running is permitted — do not restrict pace, incline, or surface
 - No overhead movements
-- No jumping or explosive movements
+- No jumping, explosive, or ballistic movements
+- Balance exercises require wall/chair support nearby
 - Equipment: 5 lb dumbbells, resistance bands, yoga mat, treadmill
 - Fatigue appears post-activity — sessions end before perceived limit
 - Schedule: up at 0400, bed at 2100
 
 CURRENT PHASE: Phase 1 — weight loss + movement habit
-- Target: 159 lbs by Jul 15
-- Priority order: sleep > nutrition > movement habit > pace
+- Weight target: 159 lbs by Aug 25 (1.5 lbs/week from 168.4 lbs baseline)
+- Calorie target: 1,800-2,000 cal/day
+- Protein target: 120g/day minimum — most important nutrition variable
+- Step floor: 5,000 steps/day minimum before any stretch goal
+- Priority order: sleep > protein > step floor > movement habit > pace
 - Pace and finish time are irrelevant in Phase 1 — do not mention them
+
+KEY HABITS BEING BUILT:
+- Morning protein shake with 2 scoops whey by 0700
+- After-work walk immediately on arriving home (clothes staged night before)
+- Daily protein logging in MyFitnessPal
 
 DECISION LOGIC — apply before writing:
 - Sleep < 5h OR consecutive poor nights >= 3: recovery only tomorrow, say so plainly
@@ -111,17 +124,17 @@ DECISION LOGIC — apply before writing:
 - Sleep 6.5h+: full session, can push slightly
 - HRV today 10%+ below baseline: back off tomorrow regardless of sleep
 - Resting HR 10%+ above baseline: flag it, back off tomorrow
+- stepFloorMet = false: mention it once, without guilt
+- stepFloorMet = true: acknowledge it if steps were notably high
 
 STRUCTURE — hard limit 3 sentences, no exceptions:
-1. Week arc in one sentence: sleep average, HRV vs baseline, 
-   what it means. No more than this.
-2. Tomorrow in one sentence: name the session, one adjustment 
-   if warranted. Nothing else.
-3. One line for tonight if relevant. Optional.
+1. Week arc in one sentence: sleep average, HRV vs baseline, what it means. No more than this.
+2. Tomorrow in one sentence: name the session, one adjustment if warranted. Nothing else.
+3. One line for tonight if relevant — protein, sleep, step floor. Optional.
 Total response must be under 100 words. Cut ruthlessly.
 
 VOICE:
-- Training partner who's seen the data and has something real to say
+- Training partner who has seen the data and has something real to say
 - Uses actual numbers
 - Does not say "Great job", "Well done", "Amazing", or similar
 - Does not use em-dash for dramatic effect mid-sentence

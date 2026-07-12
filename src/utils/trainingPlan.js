@@ -7,26 +7,26 @@ const PHASES = [
     name: 'Weight Loss Priority',
     shortName: 'Phase 1',
     startDate: '2026-05-29',
-    endDate: '2026-07-15',
-    goal: 'Lose 8-10 lbs. Build consistent movement habit.',
+    endDate: '2026-08-25',
+    goal: 'Lose to 159 lbs (1.5 lbs/week from 168.4 lbs baseline). Begin aerobic base overlap.',
     colorKey: 'amber',
     weeklyStructure: {
       Mon: { type: 'strength', label: 'Lower Body Strength',   duration: 35 },
-      Tue: { type: 'walk',     label: 'Short Walk',            distance: 2.0, speed: '3.0-3.2 mph' },
+      Tue: { type: 'walk',     label: 'Short Walk',            distance: 2.5, speed: '3.0-3.2 mph' },
       Wed: { type: 'strength', label: 'Upper Body + Core',     duration: 35 },
-      Thu: { type: 'walk',     label: 'Short Walk',            distance: 2.5, speed: '3.0-3.2 mph' },
+      Thu: { type: 'walk',     label: 'Short Walk',            distance: 3.0, speed: '3.0-3.2 mph' },
       Fri: { type: 'rest',     label: 'Rest or Light Stretch', duration: 15 },
-      Sat: { type: 'walk',     label: 'Medium Walk',           distance: 3.0, speed: '3.0-3.3 mph' },
+      Sat: { type: 'walk',     label: 'Medium Walk',           distance: 3.5, speed: '3.0-3.3 mph' },
       Sun: { type: 'rest',     label: 'Full Rest',             duration: 0 },
     },
-    nutritionNote:   'Target 1,600-1,700 cal/day. Minimum 120g protein.',
-    progressionNote: 'Add 0.25mi to Saturday walk every 2 weeks.',
+    nutritionNote:   'Target 1,800-2,000 cal/day. Minimum 120g protein.',
+    progressionNote: 'Add 0.25mi to Saturday walk every 2 weeks. Deficit continues through Aug 25 while aerobic base builds concurrently.',
   },
   {
     id: 2,
     name: 'Base Build',
     shortName: 'Phase 2',
-    startDate: '2026-07-16',
+    startDate: '2026-08-26',
     endDate: '2026-09-30',
     goal: 'Build aerobic base. Long walk 4mi → 6mi. Comfortable at 3.4-3.6 mph.',
     colorKey: 'teal',
@@ -169,7 +169,7 @@ export function getPhaseProgress() {
 export function getWeightTarget() {
   const today        = new Date()
   today.setHours(0, 0, 0, 0)
-  const phase1End    = new Date('2026-07-15')
+  const phase1End    = new Date('2026-08-25')
   const raceDayTarget = 155
   const currentPhase = getCurrentPhase()
 
@@ -177,10 +177,10 @@ export function getWeightTarget() {
     const daysLeft = Math.ceil((phase1End - today) / (1000 * 60 * 60 * 24))
     return {
       targetWeight: 159,
-      targetDate:   'Jul 15',
+      targetDate:   'Aug 25',
       daysToTarget: daysLeft,
       weeklyTarget: 1.5,
-      note:         '~1.5 lbs/week to hit 159 by Jul 15',
+      note:         '~1.5 lbs/week to hit 159 by Aug 25',
     }
   }
 

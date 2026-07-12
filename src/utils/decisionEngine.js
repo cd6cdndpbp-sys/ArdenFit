@@ -72,7 +72,52 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 4. REST DAY
+  // 4. ELEVATED RESTING HR — 10%+ above 7-day baseline
+  const restingHR  = healthData.restingHR ?? null
+  const hrBaseline = healthData.hrSevenDayAvg ?? healthData.weekSummary?.hrSevenDayAvg ?? null
+  if (restingHR != null && hrBaseline != null && hrBaseline > 0) {
+    const elevatedPct = ((restingHR - hrBaseline) / hrBaseline) * 100
+    if (elevatedPct >= 10) {
+      const subtitles = [
+        `Resting HR ${Math.round(elevatedPct)}% above baseline. Active recovery today.`,
+        `HR is up ${Math.round(elevatedPct)}%. Your body is asking for a break.`,
+        `Elevated resting HR again. Back off today.`,
+        `${Math.round(elevatedPct)}% above your 7-day average HR. Recovery, not a hard session.`,
+      ]
+      return {
+        ardenState: 'overtraining',
+        intensity:  3,
+        flags:      ['ELEVATED_HR'],
+        reasons:    [`Resting HR ${Math.round(elevatedPct)}% above 7-day baseline — active recovery only.`],
+        subtitle:   subtitles[idx],
+      }
+    }
+  }
+
+  // 5. LOW HRV — 20%+ below baseline
+  const hrvToday = healthData.hrv ?? null
+  const hrvTrend = healthData.hrvTrend ?? healthData.weekSummary?.hrvTrend ?? []
+  if (hrvToday != null && hrvTrend.length >= 3) {
+    const hrvAvg = hrvTrend.reduce((a, b) => a + b, 0) / hrvTrend.length
+    const hrvDrop = ((hrvAvg - hrvToday) / hrvAvg) * 100
+    if (hrvDrop >= 20) {
+      const subtitles = [
+        `HRV ${Math.round(hrvDrop)}% below baseline. Dial back today.`,
+        `HRV's down. Favor steady over hard today.`,
+        `Recovery signal is low. Take the edge off today's session.`,
+        `HRV ${Math.round(hrvDrop)}% off baseline — moderate, not max effort.`,
+      ]
+      return {
+        ardenState: 'low_sleep',
+        intensity:  4,
+        flags:      ['LOW_HRV'],
+        reasons:    [`HRV ${Math.round(hrvDrop)}% below 7-day baseline — reduced intensity.`],
+        subtitle:   subtitles[idx],
+      }
+    }
+  }
+
+  // 6. REST DAY
   if (todayPlan?.type === 'rest') {
     const subtitles = [
       "Rest day. Recovery is part of the plan.",
@@ -89,7 +134,7 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 5. WORKOUT COMPLETE
+  // 7. WORKOUT COMPLETE
   if (todayComplete) {
     const subtitles = [
       "Workout logged. That's what consistency looks like.",
@@ -107,7 +152,7 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 6. DEFAULT — ready to train
+  // 8. DEFAULT — ready to train
   const subtitles = [
     "Let's get after it.",
     "Data looks good. Your move.",
