@@ -5,8 +5,9 @@
 ArdenFit is a React + Vite mobile-first PWA fitness dashboard for Joma — a beginner-level walker building toward the 2027 Marine Corps Marathon. The app reads Apple Health data from a local Node server (`server.js`) at port 3001, stores workout logs and races in localStorage, and applies a 5-phase MCM training plan.
 
 **User constraints (always respect these in workout/plan logic):**
-- No overhead movements, no jumping, no explosive movements
-- Treadmill walk max speed: 3.6 mph
+- No overhead movements, no jumping, no explosive or ballistic movements
+- Balance exercises require wall/chair support nearby
+- Running is permitted — do not restrict pace, incline, or surface
 - Beginner fitness level — recovery matters more than volume
 
 ## Architecture

@@ -6,7 +6,8 @@ const FALLBACK = {
   steps:     3122,
 }
 
-const STEPS_GOAL = 8000
+const STEPS_GOAL  = 8000
+const STEPS_FLOOR = 5000
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 const CRITICAL_BADGE  = { background: '#3d0f0f', color: '#e05555' }
 
@@ -48,6 +49,15 @@ function hrvBadge(val) {
   return               ['LOW',    'warn']
 }
 
+function hrBadge(val, sevenDayAvg) {
+  if (val == null) return ['--', 'normal']
+  if (sevenDayAvg == null) return ['NORMAL', 'normal']
+  const pctAbove = ((val - sevenDayAvg) / sevenDayAvg) * 100
+  if (pctAbove >= 10)  return ['ELEVATED', 'warn']
+  if (pctAbove <= -10) return ['LOW', 'good']
+  return ['NORMAL', 'normal']
+}
+
 function trendPoints(values) {
   if (!values || values.length === 0) return [[0, 18], [200, 18]]
   const min   = Math.min(...values)
@@ -76,6 +86,8 @@ function StepsCard({ steps, theme }) {
   const s         = steps ?? FALLBACK.steps
   const pct       = Math.min(Math.round((s / STEPS_GOAL) * 100), 100)
   const remaining = Math.max(STEPS_GOAL - s, 0)
+  const floorMet  = s >= STEPS_FLOOR
+
   return (
     <div className="metric-steps-card" style={cardStyle(theme)}>
       <div>
@@ -91,8 +103,25 @@ function StepsCard({ steps, theme }) {
         <span>0</span>
         <span>8k</span>
       </div>
-      <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '4px' }}>
-        {remaining > 0 ? `${remaining.toLocaleString()} steps to go` : 'Goal reached!'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 600,
+          padding: '1px 6px',
+          borderRadius: '20px',
+          background: floorMet ? theme.badgeGood.bg : theme.badgeWarn.bg,
+          color:      floorMet ? theme.badgeGood.color : theme.badgeWarn.color,
+        }}>
+          {floorMet ? 'FLOOR ✓' : 'FLOOR'}
+        </span>
+        <span style={{ fontSize: '11px', color: theme.textMuted }}>
+          {floorMet
+            ? `${(s - STEPS_FLOOR).toLocaleString()} above minimum`
+            : `${(STEPS_FLOOR - s).toLocaleString()} to floor`}
+        </span>
+      </div>
+      <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '3px' }}>
+        {remaining > 0 ? `${remaining.toLocaleString()} steps to goal` : 'Goal reached!'}
       </div>
     </div>
   )
@@ -115,13 +144,14 @@ function HRVCard({ hrv, hrvTrend, theme }) {
   )
 }
 
-function HRCard({ restingHR, hrTrend, theme }) {
+function HRCard({ restingHR, hrTrend, hrSevenDayAvg, theme }) {
   const hrVal = restingHR ?? FALLBACK.restingHR
   const trend = hrTrend?.length ? hrTrend : FALLBACK.hrTrend
+  const [badgeLabel, badgeVariant] = hrBadge(hrVal, hrSevenDayAvg)
   return (
     <div style={cardStyle(theme)}>
       <div>
-        {badge('NORMAL', 'normal', theme)}
+        {badge(badgeLabel, badgeVariant, theme)}
         <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textSecondary, letterSpacing: '0.04em' }}>RESTING HR</div>
         <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>7-day trend</div>
       </div>
@@ -142,7 +172,12 @@ export default function MetricCards({ healthData, theme }) {
     }}>
       <StepsCard steps={healthData?.steps}                                        theme={theme} />
       <HRVCard   hrv={healthData?.hrv}            hrvTrend={healthData?.hrvTrend} theme={theme} />
-      <HRCard    restingHR={healthData?.restingHR} hrTrend={healthData?.hrTrend}  theme={theme} />
+      <HRCard
+        restingHR={healthData?.restingHR}
+        hrTrend={healthData?.hrTrend}
+        hrSevenDayAvg={healthData?.hrSevenDayAvg}
+        theme={theme}
+      />
     </div>
   )
 }

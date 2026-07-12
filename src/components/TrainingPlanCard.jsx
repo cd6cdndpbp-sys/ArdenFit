@@ -14,6 +14,7 @@ const TYPE_PILL = {
   walk:     { bg: '#172554', color: '#60a5fa' },
   strength: { bg: '#451a03', color: '#f59e0b' },
   rest:     { bg: 'transparent', color: '#666', border: '0.5px solid #444' },
+  recovery: { bg: 'transparent', color: '#e05555', border: '0.5px solid #e05555' },
 }
 
 const fmtDate = (dateStr) =>
@@ -22,7 +23,7 @@ const fmtDate = (dateStr) =>
 const WEIGHT_START = 169
 const WEIGHT_GOAL  = 159
 
-export default function TrainingPlanCard({ theme, healthData }) {
+export default function TrainingPlanCard({ theme, healthData, decision }) {
   const navigate     = useNavigate()
   const phase        = getCurrentPhase()
   const todayPlan    = getTodaysPlan()
@@ -33,10 +34,22 @@ export default function TrainingPlanCard({ theme, healthData }) {
   const todayComplete = healthData?.todayWorkoutComplete === true
   const tomorrowKey   = new Date(Date.now() + 86400000).toLocaleDateString('en-US', { weekday: 'long' }).slice(0, 3)
   const tomorrowDay   = phase.weeklyStructure?.[tomorrowKey]
-  const displayPlan   = todayComplete && tomorrowDay
-    ? { ...tomorrowDay, nutritionNote: phase.nutritionNote }
-    : todayPlan
-  const planLabel     = todayComplete && tomorrowDay ? "Tomorrow's Plan" : "Today's Plan"
+  const recoveryFlags = ['POOR_SLEEP', 'POOR_SLEEP_STREAK']
+  const isRecovery    = !todayComplete &&
+    decision?.flags?.some(f => recoveryFlags.includes(f))
+
+  const recoveryReason = decision?.reasons?.[0] ?? 'Recovery recommended based on health data.'
+
+  const displayPlan   = isRecovery
+    ? { type: 'recovery', label: 'Active Recovery', duration: 15, nutritionNote: phase.nutritionNote }
+    : todayComplete && tomorrowDay
+      ? { ...tomorrowDay, nutritionNote: phase.nutritionNote }
+      : todayPlan
+  const planLabel     = isRecovery
+    ? "Today's Plan — Modified"
+    : todayComplete && tomorrowDay
+      ? "Tomorrow's Plan"
+      : "Today's Plan"
 
   const currentWeight = healthData?.currentWeight ?? null
   const lbsRemaining  = currentWeight != null ? Math.max(Math.round((currentWeight - WEIGHT_GOAL) * 10) / 10, 0) : 0
@@ -102,7 +115,7 @@ export default function TrainingPlanCard({ theme, healthData }) {
             <div style={{
               background:   TYPE_PILL[displayPlan.type]?.bg ?? TYPE_PILL.rest.bg,
               color:        TYPE_PILL[displayPlan.type]?.color ?? TYPE_PILL.rest.color,
-              border:       displayPlan.type === 'rest' ? `0.5px solid ${theme.cardBorder}` : 'none',
+              border:       TYPE_PILL[displayPlan.type]?.border ?? (displayPlan.type === 'rest' ? `0.5px solid ${theme.cardBorder}` : 'none'),
               borderRadius: '20px',
               fontSize:     '11px',
               fontWeight:   600,
@@ -111,6 +124,7 @@ export default function TrainingPlanCard({ theme, healthData }) {
             }}>
               {displayPlan.type === 'walk' ? 'Walk'
                 : displayPlan.type === 'strength' ? 'Strength'
+                : displayPlan.type === 'recovery' ? 'Recovery'
                 : 'Rest'}
             </div>
             <div style={{ fontSize: '13px', color: theme.textPrimary }}>
@@ -118,12 +132,27 @@ export default function TrainingPlanCard({ theme, healthData }) {
                 ? `${displayPlan.distance}mi · ${displayPlan.speed}`
                 : displayPlan.type === 'strength'
                 ? `${displayPlan.duration} min`
+                : displayPlan.type === 'recovery'
+                ? '15 min · light stretch only'
                 : 'Recovery day'}
             </div>
           </div>
           <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic' }}>
             {displayPlan.nutritionNote}
           </div>
+          {isRecovery && (
+            <div style={{
+              background:   theme.badgeWarn.bg,
+              border:       `0.5px solid ${theme.badgeWarn.color}40`,
+              borderRadius: '6px',
+              padding:      '6px 10px',
+              marginTop:    '6px',
+              fontSize:     '11px',
+              color:        theme.badgeWarn.color,
+            }}>
+              ⚠ {recoveryReason}
+            </div>
+          )}
         </div>
       )}
 

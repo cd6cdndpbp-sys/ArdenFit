@@ -25,18 +25,38 @@ const useHealthData = () => {
         const restingHRValue = restingHR_metric?.data?.[restingHR_metric.data.length - 1]?.qty || null
 
         const hrv = getMetric('heart_rate_variability')
-        const hrvValue = hrv?.data?.[hrv.data.length - 1]?.qty || null
 
         const steps = getMetric('step_count')
         const _now = new Date()
         const localToday = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`
         const today = localToday
+
+        const last7Days = []
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          last7Days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
+        }
+
+        const hrvTodayReadings = hrv?.data?.filter(d => d.date?.startsWith(localToday)) || []
+        const hrvValue = hrvTodayReadings.length > 0
+          ? hrvTodayReadings.reduce((sum, d) => sum + d.qty, 0) / hrvTodayReadings.length
+          : null
+
         const stepsToday = steps?.data
           ?.filter(d => d.date?.startsWith(localToday))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
 
-        const hrTrend = restingHR_metric?.data?.slice(-7).map(d => d.qty) || []
-        const hrvTrend = hrv?.data?.slice(-7).map(d => d.qty) || []
+        const hrTrend = last7Days.map(date => {
+          const entry = restingHR_metric?.data?.find(d => d.date?.startsWith(date))
+          return entry?.qty ? Math.round(entry.qty) : null
+        }).filter(v => v != null)
+
+        const hrvTrend = last7Days.map(date => {
+          const dayReadings = hrv?.data?.filter(d => d.date?.startsWith(date)) || []
+          if (dayReadings.length === 0) return null
+          return dayReadings.reduce((sum, d) => sum + d.qty, 0) / dayReadings.length
+        }).filter(v => v != null)
 
         const activeEnergy = getMetric('active_energy')
         const activEnergyToday = activeEnergy?.data
@@ -105,13 +125,6 @@ const useHealthData = () => {
         const latestWeight = weightMetric?.data?.[weightMetric.data.length - 1]?.qty ?? null
 
         // ── 7-DAY SUMMARY ────────────────────────────────────────
-
-        const last7Days = []
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date()
-          d.setDate(d.getDate() - i)
-          last7Days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
-        }
 
         const last7Set = new Set(last7Days)
         const qualifyingWorkoutPaces = workouts
@@ -236,7 +249,7 @@ const useHealthData = () => {
             rem:   sleepData?.rem   ? Math.round(sleepData.rem   * 60) : null,
             awake: sleepData?.awake ? Math.round(sleepData.awake * 60) : null,
           },
-          restingHR: restingHRValue,
+          restingHR: restingHRValue != null ? Math.round(restingHRValue) : null,
           hrTrend,
           hrv: hrvValue != null ? Math.round(hrvValue) : null,
           hrvTrend,

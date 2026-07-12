@@ -133,6 +133,23 @@ const WEEKLY_SPLIT = {
 export function generateWorkout(decision, dayOfWeek) {
   const planToday = getTodaysPlan()
 
+  const recoveryFlags = ['POOR_SLEEP', 'POOR_SLEEP_STREAK']
+  const isRecovery = decision?.flags?.some(f => recoveryFlags.includes(f))
+
+  if (isRecovery) {
+    return {
+      type:      'Active Recovery',
+      duration:  15,
+      intensity: decision?.intensity ?? 2,
+      warmup:    [],
+      exercises: [],
+      cardio:    null,
+      cooldown:  EXERCISES.flexibility,
+      coachNote: decision?.reasons?.[0] ?? 'Recovery day — light stretching only.',
+      flags:     decision?.flags ?? [],
+    }
+  }
+
   if (planToday?.type === 'rest') {
     return {
       type:      'Active Recovery',
