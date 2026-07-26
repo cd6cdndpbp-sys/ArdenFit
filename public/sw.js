@@ -1,19 +1,17 @@
-const CACHE_NAME = 'ardenfit-v1'
-const urlsToCache = [
-  '/',
-  '/index.html',
-]
+const CACHE_NAME = 'ardenfit-v1';
 
-self.addEventListener('install', event => {
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-  )
-})
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request)
-    })
-  )
-})
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+      await self.registration.unregister();
+      const clientsList = await self.clients.matchAll({ type: 'window' });
+      clientsList.forEach(client => client.navigate(client.url));
+    })()
+  );
+});
