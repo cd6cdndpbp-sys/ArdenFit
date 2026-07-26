@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 
+const matchesLocalDay = (recordDate, targetDateStr) =>
+  recordDate ? recordDate.split(' ')[0] === targetDateStr : false
+
 const useHealthData = () => {
   const [healthData, setHealthData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -38,13 +41,13 @@ const useHealthData = () => {
           last7Days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
         }
 
-        const hrvTodayReadings = hrv?.data?.filter(d => d.date?.startsWith(localToday)) || []
+        const hrvTodayReadings = hrv?.data?.filter(d => matchesLocalDay(d.date, localToday)) || []
         const hrvValue = hrvTodayReadings.length > 0
           ? hrvTodayReadings.reduce((sum, d) => sum + d.qty, 0) / hrvTodayReadings.length
           : null
 
         const stepsToday = steps?.data
-          ?.filter(d => d.date?.startsWith(localToday))
+          ?.filter(d => matchesLocalDay(d.date, localToday))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
 
         const hrTrend = last7Days.map(date => {
@@ -60,19 +63,19 @@ const useHealthData = () => {
 
         const activeEnergy = getMetric('active_energy')
         const activEnergyToday = activeEnergy?.data
-          ?.filter(d => d.date?.startsWith(today))
+          ?.filter(d => matchesLocalDay(d.date, today))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
 
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
         const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`
         const activeEnergyYesterday = activeEnergy?.data
-          ?.filter(d => d.date?.startsWith(yesterdayStr))
+          ?.filter(d => matchesLocalDay(d.date, yesterdayStr))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
 
         const exerciseMinutes = getMetric('apple_exercise_time')
         const exerciseToday = exerciseMinutes?.data
-          ?.filter(d => d.date?.startsWith(today))
+          ?.filter(d => matchesLocalDay(d.date, today))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
 
         const exerciseLast7 = []
@@ -92,7 +95,7 @@ const useHealthData = () => {
           d.setDate(d.getDate() - i)
           const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
           const dayMins = exerciseMinutes?.data
-            ?.filter(e => e.date?.startsWith(dateStr))
+            ?.filter(e => matchesLocalDay(e.date, dateStr))
             ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
           exerciseHistory.push({ date: dateStr, mins: Math.round(dayMins) })
         }
@@ -118,7 +121,7 @@ const useHealthData = () => {
 
         const walkingDistance = getMetric('walking_running_distance')
         const distanceToday = walkingDistance?.data
-          ?.filter(d => d.date?.startsWith(today))
+          ?.filter(d => matchesLocalDay(d.date, today))
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
 
         const weightMetric = getMetric('weight_body_mass')
@@ -135,27 +138,26 @@ const useHealthData = () => {
             const workoutDate = w.start?.split(' ')[0]
             return last7Set.has(workoutDate)
           })
-          .map(w => {
-            const distanceMiles = w.distance.units === 'km'
-              ? w.distance.qty * 0.621371
-              : w.distance.qty
-            const durationMins = w.duration / 60
-            return durationMins / distanceMiles
-          })
+          .map(w => ({
+            miles: w.distance.units === 'km' ? w.distance.qty * 0.621371 : w.distance.qty,
+            mins:  w.duration / 60,
+          }))
+          .filter(w => w.miles >= 1)
+          .map(w => w.mins / w.miles)
         const avgPaceMinPerMile = qualifyingWorkoutPaces.length >= 2
           ? qualifyingWorkoutPaces.reduce((a, b) => a + b, 0) / qualifyingWorkoutPaces.length
           : null
 
         const distanceLast7 = last7Days.map(date => {
           const dayMiles = walkingDistance?.data
-            ?.filter(d => d.date?.startsWith(date))
+            ?.filter(d => matchesLocalDay(d.date, date))
             ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
           return { date, miles: Math.round(dayMiles * 100) / 100 }
         })
 
         // Sleep last 7 nights
         const sleepLast7 = last7Days.map(date => {
-          const entry = sleep?.data?.find(d => d.date?.startsWith(date))
+          const entry = sleep?.data?.find(d => matchesLocalDay(d.date, date))
           return { date, hours: entry?.totalSleep ? Math.round(entry.totalSleep * 10) / 10 : null }
         })
         const sleepValues = sleepLast7.map(d => d.hours).filter(Boolean)
@@ -167,7 +169,7 @@ const useHealthData = () => {
         // Steps last 7 days
         const stepsLast7 = last7Days.map(date => {
           const daySteps = steps?.data
-            ?.filter(d => d.date?.startsWith(date))
+            ?.filter(d => matchesLocalDay(d.date, date))
             ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
           return { date, steps: Math.round(daySteps) }
         })
@@ -177,7 +179,7 @@ const useHealthData = () => {
 
         // Resting HR last 7 days
         const hrLast7 = last7Days.map(date => {
-          const entry = restingHR_metric?.data?.find(d => d.date?.startsWith(date))
+          const entry = restingHR_metric?.data?.find(d => matchesLocalDay(d.date, date))
           return { date, hr: entry?.qty || null }
         }).filter(d => d.hr)
         const avgHRWeek = hrLast7.length > 0
@@ -186,7 +188,7 @@ const useHealthData = () => {
 
         // HRV last 7 days
         const hrvLast7 = last7Days.map(date => {
-          const entry = hrv?.data?.find(d => d.date?.startsWith(date))
+          const entry = hrv?.data?.find(d => matchesLocalDay(d.date, date))
           return { date, hrv: entry?.qty ? Math.round(entry.qty) : null }
         }).filter(d => d.hrv)
         const avgHRVWeek = hrvLast7.length > 0
@@ -196,7 +198,7 @@ const useHealthData = () => {
         // Active energy last 7 days
         const activeEnergyLast7 = last7Days.map(date => {
           const dayKcal = activeEnergy?.data
-            ?.filter(d => d.date?.startsWith(date))
+            ?.filter(d => matchesLocalDay(d.date, date))
             ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
           return { date, kcal: Math.round(dayKcal) }
         })
@@ -218,7 +220,7 @@ const useHealthData = () => {
         }
         const workoutsThisWeek = currentWeekDays.filter(date => {
           const dayMins = exerciseMinutes?.data
-            ?.filter(e => e.date?.startsWith(date))
+            ?.filter(e => matchesLocalDay(e.date, date))
             ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
           return dayMins >= 20
         }).length
@@ -231,7 +233,7 @@ const useHealthData = () => {
           prior7Days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
         }
         const priorSleepValues = prior7Days.map(date => {
-          const entry = sleep?.data?.find(d => d.date?.startsWith(date))
+          const entry = sleep?.data?.find(d => matchesLocalDay(d.date, date))
           return entry?.totalSleep || null
         }).filter(Boolean)
         const avgSleepPriorWeek = priorSleepValues.length > 0

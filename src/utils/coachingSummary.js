@@ -1,5 +1,5 @@
 import { getNextRace, RACE_DISTANCES } from './raceManager'
-import { getTomorrowsPlan, getWeightTarget } from './trainingPlan'
+import { getTomorrowsPlan, getWeightTarget, getCurrentPhase } from './trainingPlan'
 
 const CACHE_KEY = 'ardenfit_coaching_summary_evening'
 
@@ -24,6 +24,7 @@ function consecutivePoorSleepNights(sleepLast7) {
 }
 
 function buildPayload(healthData) {
+  const phase = getCurrentPhase()
   const tomorrow = getTomorrowsPlan()
   const tomorrowDesc = tomorrow
     ? tomorrow.type === 'rest'
@@ -51,10 +52,12 @@ function buildPayload(healthData) {
     exerciseMinutes:         healthData.exerciseToday ?? null,
     workoutsThisWeek:        healthData.weekSummary?.workoutsCompleted ?? null,
     currentWeight:           healthData.currentWeight ?? null,
-    weightTarget:            getWeightTarget()?.targetWeight ?? null,
-    weightTargetDate:        getWeightTarget()?.targetDate ?? null,
-    dailyCalorieTarget:      '1,800-2,000',
-    dailyProteinTarget:      120,
+    weightTarget:            getWeightTarget(healthData.currentWeight)?.targetWeight ?? null,
+    weightTargetDate:        getWeightTarget(healthData.currentWeight)?.targetDate ?? null,
+    dailyCalorieTarget:      phase.calorieMin != null && phase.calorieMax != null
+      ? `${phase.calorieMin.toLocaleString()}-${phase.calorieMax.toLocaleString()}`
+      : null,
+    dailyProteinTarget:      phase.proteinMin ?? null,
     dailyStepFloor:          5000,
     stepsToday:              healthData.steps ?? null,
     stepFloorMet:            (healthData.steps ?? 0) >= 5000,
@@ -85,6 +88,11 @@ export async function generateCoachingSummary(healthData) {
   if (cached?.date === todayStr) return cached.summary
 
   const payload = buildPayload(healthData)
+  const phase = getCurrentPhase()
+  const weightTarget = getWeightTarget(healthData.currentWeight)
+  const weightTargetDateFmt = weightTarget?.targetDate
+    ? new Date(weightTarget.targetDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : weightTarget?.targetDate
 
   const res = await fetch('http://192.168.1.221:3001/api/coaching', {
     method: 'POST',
@@ -105,9 +113,9 @@ HARD CONSTRAINTS — never violate:
 - Schedule: up at 0400, bed at 2100
 
 CURRENT PHASE: Phase 1 — weight loss + movement habit
-- Weight target: 159 lbs by Aug 25 (1.5 lbs/week from 168.4 lbs baseline)
-- Calorie target: 1,800-2,000 cal/day
-- Protein target: 120g/day minimum — most important nutrition variable
+- Weight target: ${weightTarget?.targetWeight} lbs by ${weightTargetDateFmt} (${weightTarget?.weeklyTarget} lbs/week from ${phase.weightBaseline} lbs baseline)
+- Calorie target: ${payload.dailyCalorieTarget} cal/day
+- Protein target: ${payload.dailyProteinTarget}g/day minimum — most important nutrition variable
 - Step floor: 5,000 steps/day minimum before any stretch goal
 - Priority order: sleep > protein > step floor > movement habit > pace
 - Pace and finish time are irrelevant in Phase 1 — do not mention them
