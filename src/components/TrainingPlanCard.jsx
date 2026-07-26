@@ -20,7 +20,6 @@ const TYPE_PILL = {
 const fmtDate = (dateStr) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-const WEIGHT_START = 169
 const WEIGHT_GOAL  = 159
 
 export default function TrainingPlanCard({ theme, healthData, decision }) {
@@ -28,7 +27,6 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
   const phase        = getCurrentPhase()
   const todayPlan    = getTodaysPlan()
   const progress     = getPhaseProgress()
-  const weightTarget = getWeightTarget()
   const phasePill    = PHASE_PILL[phase.colorKey] || PHASE_PILL.amber
 
   const todayComplete = healthData?.todayWorkoutComplete === true
@@ -52,9 +50,11 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
       : "Today's Plan"
 
   const currentWeight = healthData?.currentWeight ?? null
+  const weightTarget  = getWeightTarget(currentWeight)
+  const weightBaseline = phase.weightBaseline ?? WEIGHT_GOAL
   const lbsRemaining  = currentWeight != null ? Math.max(Math.round((currentWeight - WEIGHT_GOAL) * 10) / 10, 0) : 0
   const weightPct     = currentWeight != null
-    ? Math.min(Math.round((WEIGHT_START - currentWeight) / (WEIGHT_START - WEIGHT_GOAL) * 100), 100)
+    ? Math.max(0, Math.min(Math.round((weightBaseline - currentWeight) / (weightBaseline - WEIGHT_GOAL) * 100), 100))
     : 0
 
   return (
@@ -92,7 +92,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
       <div style={{ marginBottom: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
           <span>{phase.shortName}</span>
-          <span>{fmtDate(phase.endDate)}</span>
+          <span>Phase ends {fmtDate(phase.endDate)}</span>
         </div>
         <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
           <div style={{
@@ -187,10 +187,10 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
             <span style={{ fontSize: '11px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Weight Goal
+              Weight Goal (projected)
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>
-              {weightTarget.targetWeight} lbs by {fmtDate('2026-07-15')}
+              {weightTarget.targetWeight} lbs by {fmtDate(weightTarget.targetDate)}
             </span>
           </div>
           {currentWeight != null && (

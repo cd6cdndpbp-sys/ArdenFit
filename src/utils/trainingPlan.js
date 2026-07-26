@@ -10,6 +10,11 @@ const PHASES = [
     endDate: '2026-08-25',
     goal: 'Lose to 159 lbs (1.5 lbs/week from 168.4 lbs baseline). Begin aerobic base overlap.',
     colorKey: 'amber',
+    calorieMin: 1600,
+    calorieMax: 1700,
+    proteinMin: 120,
+    weightTarget: 159,
+    weightBaseline: 168.4,
     weeklyStructure: {
       Mon: { type: 'strength', label: 'Lower Body Strength',   duration: 35 },
       Tue: { type: 'walk',     label: 'Short Walk',            distance: 2.5, speed: '3.0-3.2 mph' },
@@ -19,7 +24,7 @@ const PHASES = [
       Sat: { type: 'walk',     label: 'Medium Walk',           distance: 3.5, speed: '3.0-3.3 mph' },
       Sun: { type: 'rest',     label: 'Full Rest',             duration: 0 },
     },
-    nutritionNote:   'Target 1,800-2,000 cal/day. Minimum 120g protein.',
+    nutritionNote:   'Target 1,600-1,700 cal/day. Minimum 120g protein.',
     progressionNote: 'Add 0.25mi to Saturday walk every 2 weeks. Deficit continues through Aug 25 while aerobic base builds concurrently.',
   },
   {
@@ -30,6 +35,9 @@ const PHASES = [
     endDate: '2026-09-30',
     goal: 'Build aerobic base. Long walk 4mi → 6mi. Comfortable at 3.4-3.6 mph.',
     colorKey: 'teal',
+    calorieMin: null,
+    calorieMax: null,
+    proteinMin: null,
     weeklyStructure: {
       Mon: { type: 'strength', label: 'Lower Body Strength',   duration: 40 },
       Tue: { type: 'walk',     label: 'Easy Walk',             distance: 2.5, speed: '3.0-3.3 mph' },
@@ -50,6 +58,9 @@ const PHASES = [
     endDate: '2026-12-31',
     goal: 'Long walk 6mi → 8mi. Comfortable at 3.5-3.8 mph.',
     colorKey: 'blue',
+    calorieMin: null,
+    calorieMax: null,
+    proteinMin: null,
     weeklyStructure: {
       Mon: { type: 'walk',     label: 'Easy Walk',             distance: 3.0, speed: '3.2-3.4 mph' },
       Tue: { type: 'strength', label: 'Full Body Strength',    duration: 40 },
@@ -70,6 +81,9 @@ const PHASES = [
     endDate: '2027-04-27',
     goal: 'Long walk 10-11mi. Consistent 3.6-4.0 mph. Race-ready.',
     colorKey: 'purple',
+    calorieMin: null,
+    calorieMax: null,
+    proteinMin: null,
     weeklyStructure: {
       Mon: { type: 'walk',     label: 'Easy Walk',          distance: 3.0, speed: '3.3-3.5 mph' },
       Tue: { type: 'strength', label: 'Lower Body Strength', duration: 40 },
@@ -90,6 +104,9 @@ const PHASES = [
     endDate: '2027-05-16',
     goal: 'Fresh legs on race day. Trust the training.',
     colorKey: 'green',
+    calorieMin: null,
+    calorieMax: null,
+    proteinMin: null,
     weeklyStructure: {
       Mon: { type: 'walk', label: 'Easy Walk',       distance: 2.0, speed: '3.0-3.2 mph' },
       Tue: { type: 'rest', label: 'Rest',            duration: 0 },
@@ -166,21 +183,51 @@ export function getPhaseProgress() {
   return Math.max(2, Math.min(98, Math.round((elapsed / total) * 100)))
 }
 
-export function getWeightTarget() {
-  const today        = new Date()
+export function getWeightTarget(currentWeight) {
+  const today          = new Date()
   today.setHours(0, 0, 0, 0)
-  const phase1End    = new Date('2026-08-25')
-  const raceDayTarget = 155
-  const currentPhase = getCurrentPhase()
+  const phase1End      = new Date('2026-08-25')
+  const raceDayTarget  = 155
+  const currentPhase   = getCurrentPhase()
+  const targetWeight   = 159
+  const weeklyTarget   = 1.5
 
-  if (today <= phase1End) {
+  const fmtISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+
+  if (currentPhase.id === 1 || today <= phase1End) {
+    if (currentWeight != null) {
+      const lbsRemaining = Math.max(0, Math.round((currentWeight - targetWeight) * 10) / 10)
+      if (lbsRemaining === 0) {
+        return {
+          targetWeight,
+          targetDate:   fmtISO(today),
+          daysToTarget: 0,
+          weeklyTarget,
+          lbsRemaining: 0,
+          note: 'Goal reached!',
+        }
+      }
+      const weeksNeeded   = lbsRemaining / weeklyTarget
+      const daysNeeded    = Math.ceil(weeksNeeded * 7)
+      const projectedDate = new Date(today)
+      projectedDate.setDate(projectedDate.getDate() + daysNeeded)
+      return {
+        targetWeight,
+        targetDate:     fmtISO(projectedDate),
+        daysToTarget:   daysNeeded,
+        weeklyTarget,
+        lbsRemaining,
+        onOriginalPace: projectedDate <= phase1End,
+        note:           `~${weeklyTarget} lbs/week needed · projected from current pace`,
+      }
+    }
     const daysLeft = Math.ceil((phase1End - today) / (1000 * 60 * 60 * 24))
     return {
-      targetWeight: 159,
-      targetDate:   'Aug 25',
+      targetWeight,
+      targetDate:   fmtISO(phase1End),
       daysToTarget: daysLeft,
-      weeklyTarget: 1.5,
-      note:         '~1.5 lbs/week to hit 159 by Aug 25',
+      weeklyTarget,
+      note:         '~1.5 lbs/week to hit 159 by Aug 25 (no current weight data)',
     }
   }
 
