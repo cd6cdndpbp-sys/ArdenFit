@@ -73,11 +73,18 @@ export function setPrimaryRace(id) {
   saveRaces(getRaces().map(r => ({ ...r, primary: r.id === id })))
 }
 
+const NEXT_RACE_PROXIMITY_DAYS = 14
+
 export function getNextRace() {
   const today  = new Date()
   const future = getRaces()
     .filter(r => new Date(r.date) > today)
     .sort((a, b) => new Date(a.date) - new Date(b.date))
+
+  // A non-primary race close enough to be the immediate focus overrides the primary goal race.
+  const imminentSecondary = future.find(r => !r.primary && getDaysUntil(r.date) <= NEXT_RACE_PROXIMITY_DAYS)
+  if (imminentSecondary) return imminentSecondary
+
   return future.find(r => r.primary) || future[0] || null
 }
 
