@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { getCurrentPhase, getTodaysPlan, getPhaseProgress, getWeightTarget } from '../utils/trainingPlan'
+import { getCurrentPhase, getTodaysPlan, getTomorrowsPlan, getPhaseProgress, getWeightTarget } from '../utils/trainingPlan'
 
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
@@ -8,10 +8,12 @@ const PHASE_PILL = {
   teal:   { bg: '#042f2e', color: '#2dd4bf', border: '#0f766e' },
   blue:   { bg: '#172554', color: '#60a5fa', border: '#1d4ed8' },
   purple: { bg: '#2e1065', color: '#a78bfa', border: '#7c3aed' },
+  red:    { bg: '#450a0a', color: '#f87171', border: '#b91c1c' },
 }
 
 const TYPE_PILL = {
   walk:     { bg: '#172554', color: '#60a5fa' },
+  run:      { bg: '#052e16', color: '#4ade80' },
   strength: { bg: '#451a03', color: '#f59e0b' },
   rest:     { bg: 'transparent', color: '#666', border: '0.5px solid #444' },
   recovery: { bg: 'transparent', color: '#e05555', border: '0.5px solid #e05555' },
@@ -30,8 +32,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
   const phasePill    = PHASE_PILL[phase.colorKey] || PHASE_PILL.amber
 
   const todayComplete = healthData?.todayWorkoutComplete === true
-  const tomorrowKey   = new Date(Date.now() + 86400000).toLocaleDateString('en-US', { weekday: 'long' }).slice(0, 3)
-  const tomorrowDay   = phase.weeklyStructure?.[tomorrowKey]
+  const tomorrowDay   = getTomorrowsPlan()
   const recoveryFlags = ['POOR_SLEEP', 'POOR_SLEEP_STREAK']
   const isRecovery    = !todayComplete &&
     decision?.flags?.some(f => recoveryFlags.includes(f))
@@ -123,6 +124,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
               whiteSpace:   'nowrap',
             }}>
               {displayPlan.type === 'walk' ? 'Walk'
+                : displayPlan.type === 'run' ? (displayPlan.raceDay ? 'Race Day' : 'Run')
                 : displayPlan.type === 'strength' ? 'Strength'
                 : displayPlan.type === 'recovery' ? 'Recovery'
                 : 'Rest'}
@@ -130,6 +132,10 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
             <div style={{ fontSize: '13px', color: theme.textPrimary }}>
               {displayPlan.type === 'walk'
                 ? `${displayPlan.distance}mi · ${displayPlan.speed}`
+                : displayPlan.type === 'run'
+                ? displayPlan.distance != null
+                  ? `${displayPlan.distance}mi${displayPlan.raceDay ? ' — trust the training' : ' long run'}`
+                  : `${displayPlan.durationMin} min${displayPlan.runWalkRatio ? ` · run/walk ${displayPlan.runWalkRatio}` : ' · continuous'}`
                 : displayPlan.type === 'strength'
                 ? `${displayPlan.duration} min`
                 : displayPlan.type === 'recovery'

@@ -29,9 +29,13 @@ function buildPayload(healthData) {
   const tomorrowDesc = tomorrow
     ? tomorrow.type === 'rest'
       ? 'Rest day'
-      : tomorrow.distance
-        ? `${tomorrow.label} — ${tomorrow.distance} mi at ${tomorrow.speed}`
-        : `${tomorrow.label} — ${tomorrow.duration} min`
+      : tomorrow.type === 'run'
+        ? tomorrow.distance != null
+          ? `${tomorrow.label} — ${tomorrow.distance} mi${tomorrow.raceDay ? ' (RACE DAY)' : ''}`
+          : `${tomorrow.label} — ${tomorrow.durationMin} min${tomorrow.runWalkRatio ? ` run/walk ${tomorrow.runWalkRatio}` : ' continuous'}`
+        : tomorrow.distance
+          ? `${tomorrow.label} — ${tomorrow.distance} mi at ${tomorrow.speed}`
+          : `${tomorrow.label} — ${tomorrow.duration} min`
     : 'No plan data'
 
   const hrvBaseline = avgFromArray(healthData.hrvTrend)

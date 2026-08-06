@@ -184,6 +184,71 @@ export function generateWorkout(decision, dayOfWeek) {
     }
   }
 
+  if (planToday?.type === 'run') {
+    // Long runs and race day are distance-based with no fixed pace (per plan — pace isn't
+    // restricted); RUN_PACE_ESTIMATE_MIN_PER_MILE only estimates a duration for display/logging.
+    const RUN_PACE_ESTIMATE_MIN_PER_MILE = 15
+    const isLongRun = planToday.distance != null
+    const duration  = isLongRun
+      ? Math.round(planToday.distance * RUN_PACE_ESTIMATE_MIN_PER_MILE)
+      : planToday.durationMin
+
+    const intervalNote = planToday.runWalkRatio
+      ? `Run/walk ${planToday.runWalkRatio} intervals.`
+      : 'Continuous running — take walk breaks if you need them.'
+    const stridesNote = planToday.strides ? ' Finish with a few relaxed strides.' : ''
+
+    return {
+      type:      planToday.raceDay ? 'Race Day' : planToday.label,
+      duration,
+      intensity: decision?.intensity || 6,
+      warmup: [
+        { name: 'Gentle March in Place', duration: 2, instruction: '2 min slow, hands on wall if needed' },
+      ],
+      exercises: [],
+      cardio: {
+        duration,
+        speed:       null,
+        instruction: isLongRun
+          ? `${planToday.distance} mile ${planToday.label.toLowerCase()}. ${intervalNote} Stay conversational — pace is your call.`
+          : `${planToday.durationMin} min ${planToday.label.toLowerCase()}. ${intervalNote} Stay conversational — pace is your call.${stridesNote}`,
+      },
+      cooldown:  EXERCISES.flexibility.slice(0, 3),
+      coachNote: planToday.raceDay
+        ? '🏁 Race day — 10-Mile Tune-Up. Trust the training.'
+        : `${planToday.label}${isLongRun ? ` · ${planToday.distance} miles` : ` · ${planToday.durationMin} min`}`,
+      flags:     planToday.raceDay ? ['RACE_DAY'] : [],
+    }
+  }
+
+  // Race Build's Tue/Thu strength days are driven directly by phase data (strengthGroup),
+  // not the generic day-of-week WEEKLY_SPLIT table below — that table stays untouched for
+  // every other phase's strength days.
+  if (planToday?.type === 'strength' && planToday.strengthGroup) {
+    const intensity = decision?.intensity || 7
+    const setsMultiplier = intensity >= 8 ? 1 : intensity >= 5 ? 0.67 : 0.33
+    const scaleExercise = (ex) => ({ ...ex, sets: Math.max(1, Math.round(ex.sets * setsMultiplier)) })
+
+    const groupExercises = planToday.strengthGroup === 'A'
+      ? [...EXERCISES.lowerBody.slice(0, 3), ...EXERCISES.core.slice(0, 2)]
+      : [...EXERCISES.upperBody.slice(0, 3), ...EXERCISES.core.slice(0, 2)]
+
+    return {
+      type:      planToday.label,
+      duration:  planToday.duration,
+      intensity,
+      warmup: [
+        { name: 'Gentle March in Place', duration: 2, instruction: '2 min — slow, controlled, hands on wall if needed' },
+        { name: 'Ankle Circles',         duration: 1, instruction: '30 sec each foot — seated is fine' },
+      ],
+      exercises: groupExercises.map(scaleExercise),
+      cardio:    null,
+      cooldown:  EXERCISES.flexibility,
+      coachNote: planToday.label,
+      flags:     decision?.flags || [],
+    }
+  }
+
   const intensity = decision?.intensity || 7
   const split = WEEKLY_SPLIT[dayOfWeek]
 
