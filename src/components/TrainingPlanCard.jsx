@@ -52,11 +52,15 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
 
   const currentWeight = healthData?.currentWeight ?? null
   const weightTarget  = getWeightTarget(currentWeight)
-  const weightBaseline = phase.weightBaseline ?? WEIGHT_GOAL
+  // Phases after Phase 1 don't carry a weightBaseline — fall back to currentWeight so
+  // progress is measured within this phase leg instead of dividing by zero against WEIGHT_GOAL.
+  const weightBaseline = phase.weightBaseline ?? currentWeight ?? WEIGHT_GOAL
   const lbsRemaining  = currentWeight != null ? Math.max(Math.round((currentWeight - WEIGHT_GOAL) * 10) / 10, 0) : 0
-  const weightPct     = currentWeight != null
-    ? Math.max(0, Math.min(Math.round((weightBaseline - currentWeight) / (weightBaseline - WEIGHT_GOAL) * 100), 100))
-    : 0
+  const weightPct     = currentWeight == null
+    ? 0
+    : currentWeight <= WEIGHT_GOAL
+      ? 100
+      : Math.max(0, Math.min(Math.round((weightBaseline - currentWeight) / (weightBaseline - WEIGHT_GOAL) * 100), 100))
 
   return (
     <div style={{
@@ -89,22 +93,24 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
         {phase.goal}
       </div>
 
-      {/* Progress bar */}
-      <div style={{ marginBottom: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
-          <span>{phase.shortName}</span>
-          <span>Phase ends {fmtDate(phase.endDate)}</span>
+      {/* Progress bar — open-ended phases (no endDate) have no fixed span to show progress against */}
+      {phase.endDate && (
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: theme.textMuted, marginBottom: '5px' }}>
+            <span>{phase.shortName}</span>
+            <span>Phase ends {fmtDate(phase.endDate)}</span>
+          </div>
+          <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
+            <div style={{
+              width:      `${progress}%`,
+              height:     '100%',
+              background: phasePill.color,
+              borderRadius: '2px',
+              transition: 'background-color 1.5s ease',
+            }} />
+          </div>
         </div>
-        <div style={{ height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
-          <div style={{
-            width:      `${progress}%`,
-            height:     '100%',
-            background: phasePill.color,
-            borderRadius: '2px',
-            transition: 'background-color 1.5s ease',
-          }} />
-        </div>
-      </div>
+      )}
 
       {/* Today's / Tomorrow's plan */}
       {displayPlan && (
@@ -182,7 +188,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
         → Start Workout
       </button>
 
-      {/* Weight goal — Phase 1 only */}
+      {/* Weight goal — shown whenever getWeightTarget() has a target for the current phase */}
       {weightTarget && (
         <div style={{
           background:   theme.bgSecondary,
@@ -196,7 +202,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
               Weight Goal (projected)
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>
-              {weightTarget.targetWeight} lbs by {fmtDate(weightTarget.targetDate)}
+              {weightTarget.targetWeight} lbs{weightTarget.targetDate ? ` by ${fmtDate(weightTarget.targetDate)}` : ''}
             </span>
           </div>
           {currentWeight != null && (
@@ -213,7 +219,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
             </div>
           )}
           <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic' }}>
-            ~{weightTarget.weeklyTarget ?? 1.5} lbs/week needed · {weightTarget.daysToTarget}d left
+            ~{weightTarget.weeklyTarget ?? 1.5} lbs/week needed{weightTarget.daysToTarget != null ? ` · ${weightTarget.daysToTarget}d left` : ''}
             {currentWeight != null && lbsRemaining > 0 ? ` · ${lbsRemaining} lbs to go` : ''}
             {currentWeight != null && lbsRemaining === 0 ? ' · Goal reached!' : ''}
           </div>

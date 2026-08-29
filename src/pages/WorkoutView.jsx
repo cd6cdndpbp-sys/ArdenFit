@@ -354,6 +354,7 @@ export default function WorkoutView() {
       modifications,
       intensity: workout.intensity,
       flags: workout.flags,
+      runWalkRatio: workout.runWalkRatio ?? null,
     })
     navigate('/', { state: { justCompleted: modal === 'complete' } })
   }

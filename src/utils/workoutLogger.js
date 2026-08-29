@@ -49,5 +49,8 @@ export function getTodayLog() {
 //   exercisesTotal: number,
 //   modifications: [{ exerciseName, type: 'easier' | 'harder' }],
 //   intensity: number,
-//   flags: []
+//   flags: [],
+//   runWalkRatio: '2:1' | '3:1' | '4:1' | null,  // null on a 'Run' entry means continuous —
+//                                                 // undefined/absent means this log predates
+//                                                 // the field and carries no signal either way
 // }

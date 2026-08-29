@@ -202,6 +202,7 @@ export function generateWorkout(decision, dayOfWeek) {
       type:      planToday.raceDay ? 'Race Day' : planToday.label,
       duration,
       intensity: decision?.intensity || 6,
+      runWalkRatio: planToday.runWalkRatio ?? null, // carried through so WorkoutView can log continuous-vs-interval
       warmup: [
         { name: 'Gentle March in Place', duration: 2, instruction: '2 min slow, hands on wall if needed' },
       ],

@@ -23,16 +23,7 @@ function getDefaultRaces() {
       date: '2027-10-11',
       location: 'Washington, DC',
       distance: '10 Miles',
-      goalSeconds: 9000,
-      primary: false,
-    },
-    {
-      id: 3,
-      name: '10-Mile Tune-Up Race', // placeholder — swap in the real race name/location once known
-      date: '2026-10-11',
-      location: null,
-      distance: '10 Miles',
-      goalSeconds: null,
+      goalSeconds: 9000, // 2:30:00
       primary: false,
     },
   ]
