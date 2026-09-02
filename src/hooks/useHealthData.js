@@ -127,6 +127,31 @@ const useHealthData = () => {
         const weightMetric = getMetric('weight_body_mass')
         const latestWeight = weightMetric?.data?.[weightMetric.data.length - 1]?.qty ?? null
 
+        const bodyFatMetric = getMetric('body_fat_percentage')
+
+        // Full history, not a fixed lookback window — HAE only has ~3 months of data so far
+        // and readings are sparse/irregular (not one-per-day), so take the last reading of
+        // each calendar day and merge both metrics onto a shared date axis, leaving either
+        // series null on days only the other metric has a reading.
+        const latestReadingPerDay = (metricData) => {
+          const byDay = new Map()
+          for (const entry of metricData || []) {
+            const day = entry.date?.split(' ')[0]
+            if (!day) continue
+            const existing = byDay.get(day)
+            if (!existing || entry.date > existing.date) byDay.set(day, entry)
+          }
+          return byDay
+        }
+        const weightByDay    = latestReadingPerDay(weightMetric?.data)
+        const bodyFatByDay   = latestReadingPerDay(bodyFatMetric?.data)
+        const bodyCompDays   = [...new Set([...weightByDay.keys(), ...bodyFatByDay.keys()])].sort()
+        const bodyCompHistory = bodyCompDays.map(date => ({
+          date,
+          weight:      weightByDay.get(date)?.qty  != null ? Math.round(weightByDay.get(date).qty  * 10) / 10 : null,
+          bodyFatPct:  bodyFatByDay.get(date)?.qty != null ? Math.round(bodyFatByDay.get(date).qty * 10) / 10 : null,
+        }))
+
         // ── 7-DAY SUMMARY ────────────────────────────────────────
 
         const last7Set = new Set(last7Days)
@@ -270,6 +295,7 @@ const useHealthData = () => {
           distanceLast7,
           avgPaceMinPerMile,
           currentWeight: latestWeight ? Math.round(latestWeight * 10) / 10 : null,
+          bodyCompHistory,
           workoutsThisWeek,
           weekSummary: {
             avgSleep:           avgSleepWeek,
