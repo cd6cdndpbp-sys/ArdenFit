@@ -12,11 +12,12 @@ const PHASE_PILL = {
 }
 
 const TYPE_PILL = {
-  walk:     { bg: '#172554', color: '#60a5fa' },
-  run:      { bg: '#052e16', color: '#4ade80' },
-  strength: { bg: '#451a03', color: '#f59e0b' },
-  rest:     { bg: 'transparent', color: '#666', border: '0.5px solid #444' },
-  recovery: { bg: 'transparent', color: '#e05555', border: '0.5px solid #e05555' },
+  walk:         { bg: '#172554', color: '#60a5fa' },
+  incline_walk: { bg: '#172554', color: '#60a5fa' },
+  strength:     { bg: '#451a03', color: '#f59e0b' },
+  flexibility:  { bg: '#042f2e', color: '#2dd4bf' },
+  rest:         { bg: 'transparent', color: '#666', border: '0.5px solid #444' },
+  recovery:     { bg: 'transparent', color: '#e05555', border: '0.5px solid #e05555' },
 }
 
 const fmtDate = (dateStr) =>
@@ -130,19 +131,20 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
               whiteSpace:   'nowrap',
             }}>
               {displayPlan.type === 'walk' ? 'Walk'
-                : displayPlan.type === 'run' ? (displayPlan.raceDay ? 'Race Day' : 'Run')
+                : displayPlan.type === 'incline_walk' ? 'Incline Walk'
                 : displayPlan.type === 'strength' ? 'Strength'
+                : displayPlan.type === 'flexibility' ? 'Flexibility'
                 : displayPlan.type === 'recovery' ? 'Recovery'
                 : 'Rest'}
             </div>
             <div style={{ fontSize: '13px', color: theme.textPrimary }}>
               {displayPlan.type === 'walk'
                 ? `${displayPlan.distance}mi · ${displayPlan.speed}`
-                : displayPlan.type === 'run'
-                ? displayPlan.distance != null
-                  ? `${displayPlan.distance}mi${displayPlan.raceDay ? ' — trust the training' : ' long run'}`
-                  : `${displayPlan.durationMin} min${displayPlan.runWalkRatio ? ` · run/walk ${displayPlan.runWalkRatio}` : ' · continuous'}`
+                : displayPlan.type === 'incline_walk'
+                ? `${displayPlan.duration} min · ${displayPlan.inclineMin}-${displayPlan.inclineMax}% incline`
                 : displayPlan.type === 'strength'
+                ? `${displayPlan.duration} min`
+                : displayPlan.type === 'flexibility'
                 ? `${displayPlan.duration} min`
                 : displayPlan.type === 'recovery'
                 ? '15 min · light stretch only'

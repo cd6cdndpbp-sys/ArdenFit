@@ -50,7 +50,7 @@ export function getTodayLog() {
 //   modifications: [{ exerciseName, type: 'easier' | 'harder' }],
 //   intensity: number,
 //   flags: [],
-//   runWalkRatio: '2:1' | '3:1' | '4:1' | null,  // null on a 'Run' entry means continuous —
-//                                                 // undefined/absent means this log predates
-//                                                 // the field and carries no signal either way
+//   runWalkRatio: '2:1' | '3:1' | '4:1' | null,  // legacy field from the removed running
+//                                                 // program (pre-Sept 2026) — no longer
+//                                                 // written, but historical logs still carry it
 // }

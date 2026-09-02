@@ -184,25 +184,20 @@ export function generateWorkout(decision, dayOfWeek) {
     }
   }
 
-  if (planToday?.type === 'run') {
-    // Long runs and race day are distance-based with no fixed pace (per plan — pace isn't
-    // restricted); RUN_PACE_ESTIMATE_MIN_PER_MILE only estimates a duration for display/logging.
-    const RUN_PACE_ESTIMATE_MIN_PER_MILE = 15
-    const isLongRun = planToday.distance != null
-    const duration  = isLongRun
-      ? Math.round(planToday.distance * RUN_PACE_ESTIMATE_MIN_PER_MILE)
-      : planToday.durationMin
+  if (planToday?.type === 'incline_walk') {
+    const duration = planToday.duration
+    const incline  = decision?.intensity >= 8 ? planToday.inclineMax
+      : decision?.intensity <= 3 ? planToday.inclineMin
+      : Math.round((planToday.inclineMin + planToday.inclineMax) / 2)
 
-    const intervalNote = planToday.runWalkRatio
-      ? `Run/walk ${planToday.runWalkRatio} intervals.`
-      : 'Continuous running — take walk breaks if you need them.'
-    const stridesNote = planToday.strides ? ' Finish with a few relaxed strides.' : ''
+    const cooldown = planToday.flexibilityAppend
+      ? EXERCISES.flexibility
+      : EXERCISES.flexibility.slice(0, 3)
 
     return {
-      type:      planToday.raceDay ? 'Race Day' : planToday.label,
-      duration,
+      type:      planToday.label,
+      duration:  duration + (planToday.flexibilityAppend ?? 0),
       intensity: decision?.intensity || 6,
-      runWalkRatio: planToday.runWalkRatio ?? null, // carried through so WorkoutView can log continuous-vs-interval
       warmup: [
         { name: 'Gentle March in Place', duration: 2, instruction: '2 min slow, hands on wall if needed' },
       ],
@@ -210,21 +205,32 @@ export function generateWorkout(decision, dayOfWeek) {
       cardio: {
         duration,
         speed:       null,
-        instruction: isLongRun
-          ? `${planToday.distance} mile ${planToday.label.toLowerCase()}. ${intervalNote} Stay conversational — pace is your call.`
-          : `${planToday.durationMin} min ${planToday.label.toLowerCase()}. ${intervalNote} Stay conversational — pace is your call.${stridesNote}`,
+        incline:     `${incline}%`,
+        instruction: `${duration} min treadmill walk at ${incline}% incline. Stay conversational — if you can't talk, back off the incline.`,
       },
-      cooldown:  EXERCISES.flexibility.slice(0, 3),
-      coachNote: planToday.raceDay
-        ? '🏁 Race day — 10-Mile Tune-Up. Trust the training.'
-        : `${planToday.label}${isLongRun ? ` · ${planToday.distance} miles` : ` · ${planToday.durationMin} min`}`,
-      flags:     planToday.raceDay ? ['RACE_DAY'] : [],
+      cooldown,
+      coachNote: `${planToday.label} · ${duration} min @ ${incline}% incline${planToday.extended ? ' — extended session' : ''}`,
+      flags:     [],
     }
   }
 
-  // Race Build's Tue/Thu strength days are driven directly by phase data (strengthGroup),
-  // not the generic day-of-week WEEKLY_SPLIT table below — that table stays untouched for
-  // every other phase's strength days.
+  if (planToday?.type === 'flexibility') {
+    return {
+      type:      planToday.label,
+      duration:  planToday.duration,
+      intensity: decision?.intensity || 3,
+      warmup:    [],
+      exercises: [],
+      cardio:    null,
+      cooldown:  EXERCISES.flexibility,
+      coachNote: `${planToday.label} · ${planToday.duration} min`,
+      flags:     [],
+    }
+  }
+
+  // Recomp & Flexibility's Tue/Thu strength days are driven directly by phase data
+  // (strengthGroup), not the generic day-of-week WEEKLY_SPLIT table below — that table stays
+  // untouched for every other phase's strength days.
   if (planToday?.type === 'strength' && planToday.strengthGroup) {
     const intensity = decision?.intensity || 7
     const setsMultiplier = intensity >= 8 ? 1 : intensity >= 5 ? 0.67 : 0.33

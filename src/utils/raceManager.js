@@ -1,95 +1,32 @@
-export const RACE_DISTANCES = [
-  { label: '5K',            miles: 3.107 },
-  { label: '10K',           miles: 6.214 },
-  { label: '10 Miles',      miles: 10.0  },
-  { label: 'Half Marathon', miles: 13.1  },
-  { label: 'Marathon',      miles: 26.2  },
-]
+// Races were dropped as a training goal Sept 2026 — see trainingPlan.js's RECOMP_PHASE
+// (Recomp & Flexibility) which replaced the race-anchored phases. This module is kept as a
+// no-op shim only because a few components still import it (BottomRow's RaceCard,
+// coachingSummary.js) — none of them sit in the render tree or call path anymore, but
+// gutting rather than deleting avoids a cascade of broken imports.
+//
+// The stale MCM Historic Half / Army Ten Miler localStorage entries are cleared explicitly
+// below (once) so they can't silently resurface if a race component is ever re-added.
 
-function getDefaultRaces() {
-  return [
-    {
-      id: 1,
-      name: 'MCM Historic Half',
-      date: '2027-05-17',
-      location: 'Fredericksburg, VA',
-      distance: 'Half Marathon',
-      goalSeconds: 12600,
-      primary: true,
-    },
-    {
-      id: 2,
-      name: 'Army Ten Miler',
-      date: '2027-10-11',
-      location: 'Washington, DC',
-      distance: '10 Miles',
-      goalSeconds: 9000, // 2:30:00
-      primary: false,
-    },
-  ]
-}
+export const RACE_DISTANCES = []
 
-export function getRaces() {
+const RACES_STORAGE_KEY   = 'ardenfit_races'
+const RACES_CLEARED_KEY   = 'ardenfit_races_cleared_2026_09'
+
+function clearStaleRaceData() {
   try {
-    const races = JSON.parse(localStorage.getItem('ardenfit_races')) || getDefaultRaces()
-    // migrate races saved before goalSeconds field existed
-    return races.map(r => {
-      if (r.goalSeconds != null) return r
-      const parts = r.goal?.match(/(\d+):(\d+)/)
-      return { ...r, goalSeconds: parts ? parseInt(parts[1]) * 3600 + parseInt(parts[2]) * 60 : 0 }
-    })
-  } catch { return getDefaultRaces() }
+    if (localStorage.getItem(RACES_CLEARED_KEY)) return
+    localStorage.removeItem(RACES_STORAGE_KEY)
+    localStorage.setItem(RACES_CLEARED_KEY, 'true')
+  } catch {}
 }
+clearStaleRaceData()
 
-export function saveRaces(races) {
-  localStorage.setItem('ardenfit_races', JSON.stringify(races))
-}
-
-export function addRace(race) {
-  const races = getRaces()
-  race.id = Date.now()
-  races.push(race)
-  saveRaces(races)
-}
-
-export function updateRace(id, data) {
-  saveRaces(getRaces().map(r => r.id === id ? { ...r, ...data, id } : r))
-}
-
-export function deleteRace(id) {
-  saveRaces(getRaces().filter(r => r.id !== id))
-}
-
-export function setPrimaryRace(id) {
-  saveRaces(getRaces().map(r => ({ ...r, primary: r.id === id })))
-}
-
-const NEXT_RACE_PROXIMITY_DAYS = 14
-
-export function getNextRace() {
-  const today  = new Date()
-  const future = getRaces()
-    .filter(r => new Date(r.date) > today)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-
-  // A non-primary race close enough to be the immediate focus overrides the primary goal race.
-  const imminentSecondary = future.find(r => !r.primary && getDaysUntil(r.date) <= NEXT_RACE_PROXIMITY_DAYS)
-  if (imminentSecondary) return imminentSecondary
-
-  return future.find(r => r.primary) || future[0] || null
-}
-
-export function getProgressPercent(dateStr) {
-  const daysUntil = getDaysUntil(dateStr)
-  const maxDays   = 364
-  const elapsed   = Math.max(0, maxDays - daysUntil)
-  return Math.max(2, Math.min(98, Math.round((elapsed / maxDays) * 100)))
-}
-
-export function getDaysUntil(dateStr) {
-  const today   = new Date()
-  today.setHours(0, 0, 0, 0)
-  const target  = new Date(dateStr)
-  target.setHours(0, 0, 0, 0)
-  return Math.ceil((target - today) / (1000 * 60 * 60 * 24))
-}
+export function getRaces() { return [] }
+export function saveRaces() {}
+export function addRace() {}
+export function updateRace() {}
+export function deleteRace() {}
+export function setPrimaryRace() {}
+export function getNextRace() { return null }
+export function getProgressPercent() { return 0 }
+export function getDaysUntil() { return null }

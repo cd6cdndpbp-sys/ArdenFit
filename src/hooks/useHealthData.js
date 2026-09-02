@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { PHASE3_ACTIVATION_KEY } from '../utils/trainingPlan'
 
 const matchesLocalDay = (recordDate, targetDateStr) =>
   recordDate ? recordDate.split(' ')[0] === targetDateStr : false
@@ -300,25 +299,6 @@ const useHealthData = () => {
     fetchData()
     const interval = setInterval(fetchData, 5 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [])
-
-  // One-time hydration: if localStorage was cleared but the server still has a durable
-  // Phase 3 activation date, restore it before the app relies on getCurrentPhase() again.
-  useEffect(() => {
-    const hydratePhaseState = async () => {
-      try {
-        if (localStorage.getItem(PHASE3_ACTIVATION_KEY)) return
-        const API_URL = window.location.hostname === 'localhost'
-          ? 'http://localhost:3001/api/phase-state'
-          : 'http://192.168.1.221:3001/api/phase-state'
-        const res = await fetch(API_URL)
-        const json = await res.json()
-        if (json.phase3ActivatedDate) {
-          localStorage.setItem(PHASE3_ACTIVATION_KEY, json.phase3ActivatedDate)
-        }
-      } catch {}
-    }
-    hydratePhaseState()
   }, [])
 
   return { healthData, loading }
