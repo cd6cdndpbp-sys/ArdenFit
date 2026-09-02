@@ -23,7 +23,7 @@ const TYPE_PILL = {
 const fmtDate = (dateStr) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-const WEIGHT_GOAL  = 159
+const WEIGHT_GOAL  = 155
 
 export default function TrainingPlanCard({ theme, healthData, decision }) {
   const navigate     = useNavigate()

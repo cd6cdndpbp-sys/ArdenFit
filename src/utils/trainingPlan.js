@@ -73,29 +73,6 @@ const PHASES = [
     nutritionNote:   `Target ${CALORIE_MIN.toLocaleString()}-${CALORIE_MAX.toLocaleString()} cal/day. Minimum ${PROTEIN_MIN}g protein.`,
     progressionNote: 'Increase walk duration by 5 min/week OR incline by 1%/1-2 weeks — never both the same week. Deload every 4th week: cut walk duration ~30% and drop Sunday flexibility.',
   },
-  {
-    id: 5,
-    name: 'Taper',
-    shortName: 'Taper',
-    startDate: '2027-04-28',
-    endDate: '2027-05-16',
-    goal: 'Fresh legs on race day. Trust the training.',
-    colorKey: 'green',
-    calorieMin: null,
-    calorieMax: null,
-    proteinMin: null,
-    weeklyStructure: {
-      Mon: { type: 'walk', label: 'Easy Walk',       distance: 2.0, speed: '3.0-3.2 mph' },
-      Tue: { type: 'rest', label: 'Rest',            duration: 0 },
-      Wed: { type: 'walk', label: 'Short Walk',      distance: 2.0, speed: '3.0-3.2 mph' },
-      Thu: { type: 'rest', label: 'Rest',            duration: 0 },
-      Fri: { type: 'walk', label: 'Very Short Walk', distance: 1.5, speed: '3.0 mph' },
-      Sat: { type: 'rest', label: 'Rest',            duration: 0 },
-      Sun: { type: 'rest', label: 'Full Rest',       duration: 0 },
-    },
-    nutritionNote:   'Sleep is the priority. Eat well. No new foods race week.',
-    progressionNote: 'Cut volume 30% week 1, 50% week 2, rest race week.',
-  },
 ]
 
 // Phases are date-partitioned in array order — walk them in sequence and stop advancing at
@@ -104,8 +81,7 @@ const PHASES = [
 // with data-driven activation) or still in the future. This means a later phase's
 // startDate is only ever honored once every earlier phase in the array has itself gone
 // active — a phase can never be silently reached by its own date alone while an earlier
-// phase is still pending. Structural, not special-cased to any one phase, so this also
-// protects Taper (or anything added after it) from the same class of bug.
+// phase is still pending. Structural, not special-cased to any one phase.
 export function getCurrentPhase() {
   const todayStr = fmtLocalDate(new Date())
   let current = PHASES[0]
@@ -177,54 +153,26 @@ export function getPhaseProgress() {
   return Math.max(2, Math.min(98, Math.round((elapsed / total) * 100)))
 }
 
+// Flat target — RECOMP_PHASE is the only phase left with an active weight goal, so there's
+// no phase-transition step-down and no date to project toward, just one number.
 export function getWeightTarget(currentWeight) {
-  const today         = new Date()
-  today.setHours(0, 0, 0, 0)
-  const raceDayTarget = 155
-  const currentPhase  = getCurrentPhase()
-  const targetWeight  = 159
-  const weeklyTarget  = 1.5
-
-  if (currentPhase.id >= 4) {
-    return {
-      targetWeight: raceDayTarget,
-      targetDate:   'Race day',
-      note:         'Race weight target: 155 lbs',
-    }
-  }
-
-  if (currentWeight != null) {
-    const lbsRemaining = Math.max(0, Math.round((currentWeight - targetWeight) * 10) / 10)
-    if (lbsRemaining === 0) {
-      return {
-        targetWeight,
-        targetDate:   fmtLocalDate(today),
-        daysToTarget: 0,
-        weeklyTarget,
-        lbsRemaining: 0,
-        note: 'Goal reached!',
-      }
-    }
-    const weeksNeeded   = lbsRemaining / weeklyTarget
-    const daysNeeded    = Math.ceil(weeksNeeded * 7)
-    const projectedDate = new Date(today)
-    projectedDate.setDate(projectedDate.getDate() + daysNeeded)
-    return {
-      targetWeight,
-      targetDate:   fmtLocalDate(projectedDate),
-      daysToTarget: daysNeeded,
-      weeklyTarget,
-      lbsRemaining,
-      note:         `~${weeklyTarget} lbs/week needed · projected from current pace`,
-    }
-  }
+  const targetWeight = 155
+  const weeklyTarget = 1.5
+  const lbsRemaining = currentWeight != null
+    ? Math.max(0, Math.round((currentWeight - targetWeight) * 10) / 10)
+    : null
 
   return {
     targetWeight,
     targetDate:   null,
     daysToTarget: null,
     weeklyTarget,
-    note:         `~${weeklyTarget} lbs/week toward ${targetWeight} lbs (no current weight data)`,
+    lbsRemaining,
+    note: currentWeight == null
+      ? `~${weeklyTarget} lbs/week toward ${targetWeight} lbs (no current weight data)`
+      : lbsRemaining === 0
+        ? 'Goal reached!'
+        : `~${weeklyTarget} lbs/week toward ${targetWeight} lbs`,
   }
 }
 
