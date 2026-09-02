@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { getCurrentPhase, getTodaysPlan, getTomorrowsPlan, getPhaseProgress, getWeightTarget } from '../utils/trainingPlan'
+import BodyCompTrendCard from './BodyCompTrendCard'
 
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
@@ -53,15 +54,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
 
   const currentWeight = healthData?.currentWeight ?? null
   const weightTarget  = getWeightTarget(currentWeight)
-  // Phases after Phase 1 don't carry a weightBaseline — fall back to currentWeight so
-  // progress is measured within this phase leg instead of dividing by zero against WEIGHT_GOAL.
-  const weightBaseline = phase.weightBaseline ?? currentWeight ?? WEIGHT_GOAL
   const lbsRemaining  = currentWeight != null ? Math.max(Math.round((currentWeight - WEIGHT_GOAL) * 10) / 10, 0) : 0
-  const weightPct     = currentWeight == null
-    ? 0
-    : currentWeight <= WEIGHT_GOAL
-      ? 100
-      : Math.max(0, Math.min(Math.round((weightBaseline - currentWeight) / (weightBaseline - WEIGHT_GOAL) * 100), 100))
 
   return (
     <div style={{
@@ -208,18 +201,15 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
             </span>
           </div>
           {currentWeight != null && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+            <div style={{ marginBottom: '5px' }}>
               <span style={{ fontSize: '13px', fontWeight: 600, color: theme.textPrimary, whiteSpace: 'nowrap' }}>
                 {currentWeight} lbs
               </span>
-              <div style={{ flex: 1, height: '4px', background: theme.cardBorder, borderRadius: '2px', overflow: 'hidden', transition: CARD_TRANSITION }}>
-                <div style={{ width: `${weightPct}%`, height: '100%', background: theme.accent, borderRadius: '2px', transition: 'background-color 1.5s ease' }} />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: theme.textMuted, whiteSpace: 'nowrap' }}>
-                {WEIGHT_GOAL} lbs
-              </span>
             </div>
           )}
+          <div style={{ marginBottom: '5px' }}>
+            <BodyCompTrendCard theme={theme} healthData={healthData} height={120} />
+          </div>
           <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic' }}>
             ~{weightTarget.weeklyTarget ?? 1.5} lbs/week needed{weightTarget.daysToTarget != null ? ` · ${weightTarget.daysToTarget}d left` : ''}
             {currentWeight != null && lbsRemaining > 0 ? ` · ${lbsRemaining} lbs to go` : ''}
