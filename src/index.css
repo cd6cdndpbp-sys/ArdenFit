@@ -49,7 +49,7 @@ body {
 .rest-day-stretches { display: block; }
 @media (max-width: 600px) { .rest-day-stretches { display: none; } }
 
-.plan-week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.plan-week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
 @media (max-width: 600px) { .plan-week-grid { grid-template-columns: 1fr; } }
 
 .coaching-summary-card { display: block; }
