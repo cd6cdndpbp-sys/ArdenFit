@@ -38,7 +38,7 @@ export default function BodyCompTrendCard({ theme, healthData, height = 120 }) {
       </div>
       <div style={{ width: '100%', height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={history} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+          <LineChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={theme.cardBorder} strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="date"
@@ -52,7 +52,7 @@ export default function BodyCompTrendCard({ theme, healthData, height = 120 }) {
               domain={['dataMin - 2', 'dataMax + 2']}
               tick={{ fontSize: 9, fill: theme.textMuted }}
               stroke={theme.cardBorder}
-              width={34}
+              width={36}
             />
             <YAxis
               yAxisId="bodyFat"
@@ -60,7 +60,7 @@ export default function BodyCompTrendCard({ theme, healthData, height = 120 }) {
               domain={['dataMin - 1', 'dataMax + 1']}
               tick={{ fontSize: 9, fill: theme.textMuted }}
               stroke={theme.cardBorder}
-              width={30}
+              width={32}
             />
             <Tooltip
               contentStyle={{
