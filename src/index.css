@@ -49,8 +49,17 @@ body {
 .rest-day-stretches { display: block; }
 @media (max-width: 600px) { .rest-day-stretches { display: none; } }
 
-.plan-week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
-@media (max-width: 600px) { .plan-week-grid { grid-template-columns: 1fr; } }
+/* Flex row, align-items: flex-start — each card renders at its own natural height instead
+   of being stretched to match its taller sibling (that part IS decoupled from the shared
+   row/track). Note this does NOT shrink the row container itself below the taller card's
+   height — no in-flow side-by-side layout (grid OR flex) can do that; the container's auto
+   height is always max(children), regardless of align-items. That remaining gap has no
+   visible symptom here (this row has no background/border of its own and is the last
+   section on the page), so it's left as-is rather than reached for with absolute
+   positioning or JS-measured heights. */
+.plan-week-row { display: flex; align-items: flex-start; gap: 10px; }
+.plan-week-row > * { flex: 1 1 0; min-width: 0; }
+@media (max-width: 600px) { .plan-week-row { flex-direction: column; } }
 
 .coaching-summary-card { display: block; }
 @media (max-width: 600px) { .coaching-summary-card { display: none; } }

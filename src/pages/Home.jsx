@@ -61,7 +61,7 @@ function Home() {
         </div>
         <MetricCards healthData={loading ? null : healthData} theme={theme} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 14px 14px' }}>
-          <div className="plan-week-grid">
+          <div className="plan-week-row">
             <TrainingPlanCard theme={theme} healthData={healthData} decision={decision} />
             <WeeklySummary weekSummary={healthData?.weekSummary} theme={theme} streak={healthData?.streak} />
           </div>
