@@ -14,8 +14,7 @@ function addDays(dateStr, n) {
   return fmtLocalDate(d)
 }
 
-// Reused across phases for FSHD-safe strength days — see workoutGenerator.js EXERCISES,
-// which reads `strengthGroup` directly off the day's plan entry.
+// Reused across phases for FSHD-safe strength days.
 const STRENGTH_A = { type: 'strength', label: 'Strength A — Lower Body',        duration: 35, strengthGroup: 'A' }
 const STRENGTH_B = { type: 'strength', label: 'Strength B — Upper Body + Core', duration: 35, strengthGroup: 'B' }
 const FULL_REST  = { type: 'rest', label: 'Full Rest', duration: 0 }
