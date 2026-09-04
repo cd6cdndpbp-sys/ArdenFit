@@ -1,4 +1,83 @@
+import { getWorkoutLogs } from '../utils/workoutLogger'
+
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
+
+const HEATMAP_WEEKS = 6
+const DAY_LETTERS   = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+const localDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+// Rolling recent window, not "since app start" — getWorkoutLogs() currently holds just one
+// entry (the known migration-fixed record from 2026-05-30, see workoutLogger.js), not an
+// ongoing log. A recent window honestly shows "no recent consistency" rather than a stale
+// checkmark from months back. Only completed-vs-not is used (accent/warn/none) — a third
+// "skipped but planned" tier would need reconstructing what the training plan called for on
+// a given historical date, which isn't reliable: the plan's phase structure has been
+// replaced multiple times and old phase definitions no longer exist in trainingPlan.js.
+function WorkoutHeatmap({ theme }) {
+  const byDate = new Map(getWorkoutLogs().map(l => [l.date, l.completed]))
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayDow    = (today.getDay() + 6) % 7 // Mon=0 ... Sun=6
+  const thisMonday  = new Date(today)
+  thisMonday.setDate(today.getDate() - todayDow)
+  const gridStart   = new Date(thisMonday)
+  gridStart.setDate(thisMonday.getDate() - (HEATMAP_WEEKS - 1) * 7)
+
+  const weeks = Array.from({ length: HEATMAP_WEEKS }, (_, w) =>
+    Array.from({ length: 7 }, (_, d) => {
+      const date = new Date(gridStart)
+      date.setDate(gridStart.getDate() + w * 7 + d)
+      return date
+    })
+  )
+
+  const cellInfo = (date) => {
+    if (date > today) return { color: 'transparent', label: 'upcoming' }
+    const dateStr = localDateStr(date)
+    if (!byDate.has(dateStr)) return { color: theme.cardBorder, label: 'no workout logged' }
+    return byDate.get(dateStr)
+      ? { color: theme.accent, label: 'completed' }
+      : { color: theme.badgeWarn.color, label: 'bailed early' }
+  }
+
+  return (
+    <div style={{ marginTop: '12px' }}>
+      <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+        Consistency — last {HEATMAP_WEEKS} weeks
+      </div>
+      <div style={{ display: 'inline-block' }}>
+        <div style={{ display: 'flex', gap: '3px', marginBottom: '3px' }}>
+          {DAY_LETTERS.map((letter, i) => (
+            <div key={i} style={{ width: '13px', fontSize: '8px', color: theme.textMuted, textAlign: 'center' }}>
+              {letter}
+            </div>
+          ))}
+        </div>
+        {weeks.map((days, wi) => (
+          <div key={wi} style={{ display: 'flex', gap: '3px', marginBottom: '3px' }}>
+            {days.map((date, di) => {
+              const { color, label } = cellInfo(date)
+              return (
+                <div
+                  key={di}
+                  title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${label}`}
+                  style={{
+                    width: '13px', height: '13px', borderRadius: '3px',
+                    background: color,
+                    transition: 'background-color 1.5s ease',
+                  }}
+                />
+              )
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function SlimSleepSparkline({ sleepLast7, theme }) {
   if (!sleepLast7?.length) return null
@@ -124,6 +203,8 @@ export default function WeeklySummary({ weekSummary, theme, streak }) {
 
         <SlimSleepSparkline sleepLast7={sleepLast7} theme={theme} />
       </div>
+
+      <WorkoutHeatmap theme={theme} />
     </div>
   )
 }
