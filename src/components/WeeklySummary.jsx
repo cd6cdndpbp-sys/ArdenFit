@@ -1,5 +1,3 @@
-import { getWorkoutLogs } from '../utils/workoutLogger'
-
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
 const HEATMAP_WEEKS = 6
@@ -8,15 +6,11 @@ const DAY_LETTERS   = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const localDateStr = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-// Rolling recent window, not "since app start" — getWorkoutLogs() currently holds just one
-// entry (the known migration-fixed record from 2026-05-30, see workoutLogger.js), not an
-// ongoing log. A recent window honestly shows "no recent consistency" rather than a stale
-// checkmark from months back. Only completed-vs-not is used (accent/warn/none) — a third
-// "skipped but planned" tier would need reconstructing what the training plan called for on
-// a given historical date, which isn't reliable: the plan's phase structure has been
-// replaced multiple times and old phase definitions no longer exist in trainingPlan.js.
-function WorkoutHeatmap({ theme }) {
-  const byDate = new Map(getWorkoutLogs().map(l => [l.date, l.completed]))
+// Same apple_exercise_time-based "active day" signal STREAK already uses (useHealthData.js,
+// via the shared buildExerciseHistory() helper) — not a separate in-app workout log. Binary
+// only (active/not), since a minutes threshold has no richer state to show than that.
+function WorkoutHeatmap({ theme, exerciseHistory }) {
+  const byDate = new Map((exerciseHistory ?? []).map(d => [d.date, d.active]))
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -37,10 +31,9 @@ function WorkoutHeatmap({ theme }) {
   const cellInfo = (date) => {
     if (date > today) return { color: 'transparent', label: 'upcoming' }
     const dateStr = localDateStr(date)
-    if (!byDate.has(dateStr)) return { color: theme.cardBorder, label: 'no workout logged' }
     return byDate.get(dateStr)
-      ? { color: theme.accent, label: 'completed' }
-      : { color: theme.badgeWarn.color, label: 'bailed early' }
+      ? { color: theme.accent, label: 'active day' }
+      : { color: theme.cardBorder, label: 'no meaningful activity' }
   }
 
   return (
@@ -115,7 +108,7 @@ function SlimSleepSparkline({ sleepLast7, theme }) {
   )
 }
 
-export default function WeeklySummary({ weekSummary, theme, streak }) {
+export default function WeeklySummary({ weekSummary, theme, streak, exerciseHistory }) {
   if (!weekSummary) {
     return (
       <div style={{ background: theme.cardBg, border: `0.5px solid ${theme.cardBorder}`, borderRadius: '10px', padding: '14px', transition: CARD_TRANSITION }}>
@@ -202,7 +195,7 @@ export default function WeeklySummary({ weekSummary, theme, streak }) {
         <SlimSleepSparkline sleepLast7={sleepLast7} theme={theme} />
       </div>
 
-      <WorkoutHeatmap theme={theme} />
+      <WorkoutHeatmap theme={theme} exerciseHistory={exerciseHistory} />
     </div>
   )
 }

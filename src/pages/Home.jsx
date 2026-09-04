@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
 import DashboardHeader from '../components/DashboardHeader'
 import MetricCards from '../components/MetricCards'
 import TrainingPlanCard from '../components/TrainingPlanCard'
@@ -11,19 +9,9 @@ import { runDecisionEngine } from '../utils/decisionEngine'
 import { getTodaysPlan, getWeekPlan } from '../utils/trainingPlan'
 
 function Home() {
-  const location = useLocation()
   const { healthData, loading } = useHealthData()
   const theme = useTheme()
   const decision = runDecisionEngine(healthData)
-  const [celebrating, setCelebrating] = useState(false)
-
-  useEffect(() => {
-    if (location.state?.justCompleted) {
-      setCelebrating(true)
-      const t = setTimeout(() => setCelebrating(false), 5000)
-      return () => clearTimeout(t)
-    }
-  }, [location.state?.justCompleted])
 
   const todaysPlan  = getTodaysPlan()
 
@@ -40,10 +28,8 @@ function Home() {
     ? (isTomorrow ? `Tomorrow: ${nextWorkout.label}` : `Next: ${nextWorkout.label} (${nextWorkout.day})`)
     : 'Check back tomorrow'
 
-  const ardenState  = celebrating ? 'pr' : (decision?.ardenState ?? 'rest')
-  const subtitle    = celebrating
-    ? "That's what consistency looks like. Well done."
-    : (decision?.subtitle ?? 'Loading...')
+  const ardenState  = decision?.ardenState ?? 'rest'
+  const subtitle    = decision?.subtitle ?? 'Loading...'
 
   return (
     <main style={{ background: theme.bg, minHeight: '100vh', transition: 'background-color 2s ease' }}>
@@ -63,7 +49,12 @@ function Home() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 14px 14px' }}>
           <div className="plan-week-row">
             <TrainingPlanCard theme={theme} healthData={healthData} decision={decision} />
-            <WeeklySummary weekSummary={healthData?.weekSummary} theme={theme} streak={healthData?.streak} />
+            <WeeklySummary
+              weekSummary={healthData?.weekSummary}
+              theme={theme}
+              streak={healthData?.streak}
+              exerciseHistory={healthData?.exerciseHistory}
+            />
           </div>
         </div>
       </div>

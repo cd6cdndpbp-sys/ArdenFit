@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { getCurrentPhase, getTodaysPlan, getTomorrowsPlan, getPhaseProgress, getWeightTarget } from '../utils/trainingPlan'
 import BodyCompTrendCard from './BodyCompTrendCard'
 
@@ -27,7 +26,6 @@ const fmtDate = (dateStr) =>
 const WEIGHT_GOAL  = 155
 
 export default function TrainingPlanCard({ theme, healthData, decision }) {
-  const navigate     = useNavigate()
   const phase        = getCurrentPhase()
   const todayPlan    = getTodaysPlan()
   const progress     = getPhaseProgress()
@@ -162,26 +160,6 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
           )}
         </div>
       )}
-
-      <button
-        className="start-workout-btn"
-        onClick={() => navigate('/workout')}
-        style={{
-          width:        '100%',
-          marginBottom: '12px',
-          padding:      '8px',
-          background:   'transparent',
-          border:       `0.5px solid ${theme.accent}`,
-          borderRadius: '8px',
-          color:        theme.accent,
-          fontSize:     '13px',
-          fontWeight:   600,
-          cursor:       'pointer',
-          transition:   'border-color 1.5s ease, color 1.5s ease',
-        }}
-      >
-        → Start Workout
-      </button>
 
       {/* Weight goal — shown whenever getWeightTarget() has a target for the current phase */}
       {weightTarget && (

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ACTIVE_DAY_MIN_MINUTES, buildExerciseHistory } from '../utils/exerciseHistory'
 
 const matchesLocalDay = (recordDate, targetDateStr) =>
   recordDate ? recordDate.split(' ')[0] === targetDateStr : false
@@ -89,24 +90,19 @@ const useHealthData = () => {
           exerciseLast7.push({ date: dateStr, mins: Math.round(dayMins) })
         }
 
-        const exerciseHistory = []
-        for (let i = 29; i >= 0; i--) {
-          const d = new Date()
-          d.setDate(d.getDate() - i)
-          const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-          const dayMins = exerciseMinutes?.data
-            ?.filter(e => matchesLocalDay(e.date, dateStr))
-            ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
-          exerciseHistory.push({ date: dateStr, mins: Math.round(dayMins) })
-        }
+        // 42 days covers the heatmap's full 6-week Mon-Sun grid at minimum (worst case:
+        // today is Sunday, the grid's earliest cell lands exactly 41 days back) — also more
+        // than enough range for streak, which only ever needs to look as far back as
+        // whatever the current streak itself runs.
+        const exerciseHistory = buildExerciseHistory(exerciseMinutes, 42)
 
         let streak = 0
         const todayMins = exerciseHistory.find(d => d.date === today)?.mins || 0
-        let startIndex = todayMins >= 15
+        let startIndex = todayMins >= ACTIVE_DAY_MIN_MINUTES
           ? exerciseHistory.length - 1
           : exerciseHistory.length - 2
         for (let i = startIndex; i >= 0; i--) {
-          if (exerciseHistory[i].mins >= 15) streak++
+          if (exerciseHistory[i].active) streak++
           else break
         }
 
@@ -287,6 +283,7 @@ const useHealthData = () => {
           todayExerciseMinutes: Math.round(exerciseToday),
           todayWorkoutComplete: exerciseToday >= 20,
           exerciseLast7,
+          exerciseHistory,
           streak,
           respiratoryRate: respiratoryRateValue ? Math.round(respiratoryRateValue * 10) / 10 : null,
           respiratoryTrend,
