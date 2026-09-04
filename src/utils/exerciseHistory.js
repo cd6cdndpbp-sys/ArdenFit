@@ -1,7 +1,14 @@
-// Shared "was this a day with meaningful activity" logic — STREAK's own definition
-// (useHealthData.js), reused as-is by the workout consistency heatmap so both read the
-// same threshold against the same apple_exercise_time data instead of drifting apart.
+// Two distinct apple_exercise_time thresholds, used for two different purposes — kept
+// separately named and changeable rather than sharing one number:
+//
+// ACTIVE_DAY_MIN_MINUTES (15) — "did something today." Drives STREAK and the consistency
+// heatmap (useHealthData.js's streak loop, buildExerciseHistory() below).
+//
+// WORKOUT_COMPLETE_MIN_MINUTES (20) — "counts as a completed workout." Drives
+// todayWorkoutComplete, which feeds decisionEngine.js's WORKOUT_COMPLETE flag (Arden's
+// post-workout celebratory state), and the weekly WORKOUTS count.
 export const ACTIVE_DAY_MIN_MINUTES = 15
+export const WORKOUT_COMPLETE_MIN_MINUTES = 20
 
 const localDateStr = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`

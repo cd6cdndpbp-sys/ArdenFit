@@ -23,8 +23,6 @@ const TYPE_PILL = {
 const fmtDate = (dateStr) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-const WEIGHT_GOAL  = 155
-
 export default function TrainingPlanCard({ theme, healthData, decision }) {
   const phase        = getCurrentPhase()
   const todayPlan    = getTodaysPlan()
@@ -52,7 +50,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
 
   const currentWeight = healthData?.currentWeight ?? null
   const weightTarget  = getWeightTarget(currentWeight)
-  const lbsRemaining  = currentWeight != null ? Math.max(Math.round((currentWeight - WEIGHT_GOAL) * 10) / 10, 0) : 0
+  const lbsRemaining  = currentWeight != null ? Math.max(Math.round((currentWeight - weightTarget.targetWeight) * 10) / 10, 0) : 0
 
   return (
     <div style={{
@@ -189,7 +187,7 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
             <BodyCompTrendCard theme={theme} healthData={healthData} height={120} />
           </div>
           <div style={{ fontSize: '11px', color: theme.textMuted, fontStyle: 'italic' }}>
-            ~{weightTarget.weeklyTarget ?? 1.5} lbs/week needed{weightTarget.daysToTarget != null ? ` · ${weightTarget.daysToTarget}d left` : ''}
+            ~{weightTarget.weeklyTarget} lbs/week needed{weightTarget.daysToTarget != null ? ` · ${weightTarget.daysToTarget}d left` : ''}
             {currentWeight != null && lbsRemaining > 0 ? ` · ${lbsRemaining} lbs to go` : ''}
             {currentWeight != null && lbsRemaining === 0 ? ' · Goal reached!' : ''}
           </div>

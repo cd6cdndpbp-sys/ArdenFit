@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ACTIVE_DAY_MIN_MINUTES, buildExerciseHistory } from '../utils/exerciseHistory'
+import { ACTIVE_DAY_MIN_MINUTES, WORKOUT_COMPLETE_MIN_MINUTES, buildExerciseHistory } from '../utils/exerciseHistory'
 
 const matchesLocalDay = (recordDate, targetDateStr) =>
   recordDate ? recordDate.split(' ')[0] === targetDateStr : false
@@ -121,8 +121,6 @@ const useHealthData = () => {
           ?.reduce((sum, d) => sum + (d.qty || 0), 0) || 0
 
         const weightMetric = getMetric('weight_body_mass')
-        const latestWeight = weightMetric?.data?.[weightMetric.data.length - 1]?.qty ?? null
-
         const bodyFatMetric = getMetric('body_fat_percentage')
 
         // Full history, not a fixed lookback window — HAE only has ~3 months of data so far
@@ -147,6 +145,11 @@ const useHealthData = () => {
           weight:      weightByDay.get(date)?.qty  != null ? Math.round(weightByDay.get(date).qty  * 10) / 10 : null,
           bodyFatPct:  bodyFatByDay.get(date)?.qty != null ? Math.round(bodyFatByDay.get(date).qty * 10) / 10 : null,
         }))
+        // Single source for "current weight" — the most recent bodyCompHistory day that
+        // actually has a weight reading (not necessarily the literal last day, which could
+        // be a body-fat-only reading), rather than a second, independent lookup into the raw
+        // weight array that could disagree with bodyCompHistory's own last point.
+        const latestWeight = [...bodyCompHistory].reverse().find(d => d.weight != null)?.weight ?? null
 
         // ── 7-DAY SUMMARY ────────────────────────────────────────
 
@@ -228,7 +231,7 @@ const useHealthData = () => {
         )
         const totalActiveEnergyWeek = activeEnergyLast7.reduce((sum, d) => sum + d.kcal, 0)
 
-        // Workouts this Mon-Sun week from Apple Health (>= 20 exercise minutes)
+        // Workouts this Mon-Sun week from Apple Health (>= WORKOUT_COMPLETE_MIN_MINUTES)
         const _dow = _now.getDay()
         const _mondayOffset = _dow === 0 ? -6 : 1 - _dow
         const _monday = new Date(_now)
@@ -243,7 +246,7 @@ const useHealthData = () => {
           const dayMins = exerciseMinutes?.data
             ?.filter(e => matchesLocalDay(e.date, date))
             ?.reduce((sum, e) => sum + (e.qty || 0), 0) || 0
-          return dayMins >= 20
+          return dayMins >= WORKOUT_COMPLETE_MIN_MINUTES
         }).length
 
         // Sleep trend vs prior week
@@ -281,7 +284,7 @@ const useHealthData = () => {
           activeEnergyYesterday: Math.round(activeEnergyYesterday),
           exerciseToday: Math.round(exerciseToday),
           todayExerciseMinutes: Math.round(exerciseToday),
-          todayWorkoutComplete: exerciseToday >= 20,
+          todayWorkoutComplete: exerciseToday >= WORKOUT_COMPLETE_MIN_MINUTES,
           exerciseLast7,
           exerciseHistory,
           streak,
@@ -291,7 +294,7 @@ const useHealthData = () => {
           distanceToday: Math.round(distanceToday * 10) / 10,
           distanceLast7,
           avgPaceMinPerMile,
-          currentWeight: latestWeight ? Math.round(latestWeight * 10) / 10 : null,
+          currentWeight: latestWeight,
           bodyCompHistory,
           workoutsThisWeek,
           weekSummary: {
