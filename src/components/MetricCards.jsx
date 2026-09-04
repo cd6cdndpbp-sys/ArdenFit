@@ -74,7 +74,7 @@ function Sparkline({ values, color }) {
   const last = points[points.length - 1]
   return (
     <svg width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none">
-      <path d={d} stroke={color} strokeWidth="1.5" fill="none" />
+      <path d={d} stroke={color} strokeWidth="2" fill="none" />
       <circle cx={last[0]} cy={last[1]} r="3" fill={color} />
     </svg>
   )

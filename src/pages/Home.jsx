@@ -43,7 +43,7 @@ function Home() {
           healthData={healthData}
         />
         <div style={{ padding: '10px 14px 0' }}>
-          <CoachingSummary theme={theme} healthData={healthData} />
+          <CoachingSummary theme={theme} healthData={healthData} ardenState={ardenState} />
         </div>
         <MetricCards healthData={loading ? null : healthData} theme={theme} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 14px 14px' }}>

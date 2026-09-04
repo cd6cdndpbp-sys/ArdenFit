@@ -94,9 +94,9 @@ export default function TrainingPlanCard({ theme, healthData, decision }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <div style={{
-              background:   TYPE_PILL[displayPlan.type]?.bg ?? TYPE_PILL.rest.bg,
-              color:        TYPE_PILL[displayPlan.type]?.color ?? TYPE_PILL.rest.color,
-              border:       TYPE_PILL[displayPlan.type]?.border ?? (displayPlan.type === 'rest' ? `0.5px solid ${theme.cardBorder}` : 'none'),
+              background:   (TYPE_PILL[displayPlan.type] ?? TYPE_PILL.rest).bg,
+              color:        (TYPE_PILL[displayPlan.type] ?? TYPE_PILL.rest).color,
+              border:       `0.5px solid ${(TYPE_PILL[displayPlan.type] ?? TYPE_PILL.rest).border}`,
               borderRadius: '20px',
               fontSize:     '11px',
               fontWeight:   600,

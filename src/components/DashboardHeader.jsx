@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useCrossfadeLayers } from '../hooks/useCrossfadeLayers'
 
 const ARDEN_IMAGES = {
   rest:           'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS3.png',
@@ -50,6 +51,8 @@ export default function DashboardHeader({
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+
+  const ardenLayers = useCrossfadeLayers(ARDEN_IMAGES[ardenState] || ARDEN_IMAGES.rest)
 
   const sleep      = healthData?.sleep?.total
   const hrv        = healthData?.hrv
@@ -127,19 +130,22 @@ export default function DashboardHeader({
         )}
       </div>
 
-      {/* Arden — height controlled by .arden-img CSS class */}
-      <img
-        src={ARDEN_IMAGES[ardenState] || ARDEN_IMAGES.rest}
-        alt="Arden"
-        className="arden-img"
-        style={{
-          position:       'absolute',
-          width:          'auto',
-          objectFit:      'contain',
-          objectPosition: 'bottom right',
-          zIndex:         1,
-        }}
-      />
+      {/* Arden — height controlled by .arden-img CSS class, crossfades on state change */}
+      {ardenLayers.map((layer, i, arr) => (
+        <img
+          key={layer.id}
+          src={layer.src}
+          alt="Arden"
+          className={i === arr.length - 1 ? 'arden-img fade-in-layer' : 'arden-img'}
+          style={{
+            position:       'absolute',
+            width:          'auto',
+            objectFit:      'contain',
+            objectPosition: 'bottom right',
+            zIndex:         1,
+          }}
+        />
+      ))}
     </header>
   )
 }

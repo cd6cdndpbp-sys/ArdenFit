@@ -94,7 +94,7 @@ function SlimSleepSparkline({ sleepLast7, theme }) {
                 width:        '100%',
                 height:       `${barH}px`,
                 background:   barColor,
-                borderRadius: '2px 2px 0 0',
+                borderRadius: '3px 3px 0 0',
                 transition:   'background-color 1.5s ease',
               }} />
               <div style={{ fontSize: '9px', color: theme.textMuted, marginTop: '3px' }}>
