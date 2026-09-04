@@ -54,7 +54,7 @@ export default function DashboardHeader({
   const sleep      = healthData?.sleep?.total
   const hrv        = healthData?.hrv
   const restingHR  = healthData?.restingHR
-  const sleepColor = sleep >= 7 ? '#3ecf8e' : sleep >= 6 ? theme.textPrimary : '#f0a030'
+  const sleepColor = sleep >= 7 ? theme.badgeGood.color : sleep >= 6 ? theme.textPrimary : theme.badgeWarn.color
 
   return (
     <header
@@ -121,8 +121,8 @@ export default function DashboardHeader({
         )}
         {restingHR != null && (
           <div style={dataPillStyle(theme)}>
-            <span style={{ fontSize: '14px', color: '#4a9edd' }}>♡</span>
-            <span style={{ color: '#4a9edd' }}>{restingHR} bpm</span>
+            <span style={{ fontSize: '14px', color: theme.sparklineHR }}>♡</span>
+            <span style={{ color: theme.sparklineHR }}>{restingHR} bpm</span>
           </div>
         )}
       </div>

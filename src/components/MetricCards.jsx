@@ -9,7 +9,6 @@ const FALLBACK = {
 const STEPS_GOAL  = 8000
 const STEPS_FLOOR = 5000
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
-const CRITICAL_BADGE  = { background: '#3d0f0f', color: '#e05555' }
 
 const cardStyle = (theme) => ({
   background:   theme.cardBg,
@@ -20,10 +19,9 @@ const cardStyle = (theme) => ({
 })
 
 const badge = (label, variant, theme) => {
-  const s = variant === 'good'     ? { background: theme.badgeGood.bg,   color: theme.badgeGood.color }
-          : variant === 'warn'     ? { background: theme.badgeWarn.bg,   color: theme.badgeWarn.color }
-          : variant === 'critical' ? CRITICAL_BADGE
-          :                          { background: theme.badgeNormal.bg, color: theme.badgeNormal.color }
+  const s = variant === 'good' ? { background: theme.badgeGood.bg,   color: theme.badgeGood.color }
+          : variant === 'warn' ? { background: theme.badgeWarn.bg,   color: theme.badgeWarn.color }
+          :                      { background: theme.badgeNormal.bg, color: theme.badgeNormal.color }
   return (
     <span style={{
       ...s,

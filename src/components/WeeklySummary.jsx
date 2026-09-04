@@ -82,8 +82,8 @@ function SlimSleepSparkline({ sleepLast7, theme }) {
           const barH     = hours ? Math.max(2, Math.round((Math.min(hours, 9) / 9) * 180)) : 3
           const barColor = !hours ? theme.cardBorder
             : hours >= 6.5 ? theme.accent
-            : hours >= 5.5 ? '#888'
-            : '#e05555'
+            : hours >= 5.5 ? theme.textMuted
+            : theme.badgeWarn.color
           const dayLabel = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })
           return (
             <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -124,11 +124,11 @@ export default function WeeklySummary({ weekSummary, theme, streak, exerciseHist
     workoutsCompleted, workoutsPlanned,
   } = weekSummary
 
-  const trendArrow = sleepTrend === 'up'   ? { char: '↑', color: '#3ecf8e' }
-    : sleepTrend === 'down' ? { char: '↓', color: '#f0a030' }
+  const trendArrow = sleepTrend === 'up'   ? { char: '↑', color: theme.badgeGood.color }
+    : sleepTrend === 'down' ? { char: '↓', color: theme.badgeWarn.color }
     : { char: '→', color: theme.textMuted }
 
-  const sleepColor   = avgSleep >= 6.5 ? theme.accent : avgSleep >= 5.5 ? theme.textPrimary : '#f0a030'
+  const sleepColor   = avgSleep >= 6.5 ? theme.accent : avgSleep >= 5.5 ? theme.textPrimary : theme.badgeWarn.color
   const workoutColor = workoutsCompleted >= workoutsPlanned ? theme.accent : theme.textPrimary
 
   const stats = [
