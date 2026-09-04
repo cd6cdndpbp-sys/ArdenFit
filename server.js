@@ -83,9 +83,13 @@ app.post('/api/coaching', async (req, res) => {
 app.get('/api/health', (req, res) => {
   if (fs.existsSync(DATA_FILE)) {
     const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
-    res.json(data)
+    // health-data.json has no internal sync timestamp of its own — the file's own mtime,
+    // updated on every successful POST /api/health merge, is the only reliable freshness
+    // signal available (checked before building the status indicator that reads this).
+    const lastUpdated = fs.statSync(DATA_FILE).mtime.toISOString()
+    res.json({ ...data, _meta: { lastUpdated } })
   } else {
-    res.json({ data: { metrics: [] } })
+    res.json({ data: { metrics: [] }, _meta: { lastUpdated: null } })
   }
 })
 

@@ -1,3 +1,5 @@
+import { TYPE_PILL } from '../constants/badgeColors'
+
 const CARD_TRANSITION = 'background-color 1.5s ease, border-color 1.5s ease'
 
 const HEATMAP_WEEKS = 6
@@ -6,11 +8,11 @@ const DAY_LETTERS   = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const localDateStr = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-// Same apple_exercise_time-based "active day" signal STREAK already uses (useHealthData.js,
-// via the shared buildExerciseHistory() helper) — not a separate in-app workout log. Binary
-// only (active/not), since a minutes threshold has no richer state to show than that.
-function WorkoutHeatmap({ theme, exerciseHistory }) {
-  const byDate = new Map((exerciseHistory ?? []).map(d => [d.date, d.active]))
+// Shared grid renderer for any binary daily-activity history ({ date, active }[]) — used for
+// both the exercise-consistency heatmap and the flexibility-session heatmap below, which are
+// visually identical apart from which history/color they read.
+function ActivityHeatmap({ theme, history, label, activeColor }) {
+  const byDate = new Map((history ?? []).map(d => [d.date, d.active]))
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -32,14 +34,14 @@ function WorkoutHeatmap({ theme, exerciseHistory }) {
     if (date > today) return { color: 'transparent', label: 'upcoming' }
     const dateStr = localDateStr(date)
     return byDate.get(dateStr)
-      ? { color: theme.accent, label: 'active day' }
+      ? { color: activeColor, label: 'active day' }
       : { color: theme.cardBorder, label: 'no meaningful activity' }
   }
 
   return (
     <div style={{ marginTop: '12px' }}>
       <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-        Consistency — last {HEATMAP_WEEKS} weeks
+        {label} — last {HEATMAP_WEEKS} weeks
       </div>
       <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
         {DAY_LETTERS.map((letter, i) => (
@@ -51,11 +53,11 @@ function WorkoutHeatmap({ theme, exerciseHistory }) {
       {weeks.map((days, wi) => (
         <div key={wi} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
           {days.map((date, di) => {
-            const { color, label } = cellInfo(date)
+            const { color, label: cellLabel } = cellInfo(date)
             return (
               <div
                 key={di}
-                title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${label}`}
+                title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${cellLabel}`}
                 style={{
                   flex: 1, height: '14px', borderRadius: '3px',
                   background: color,
@@ -68,6 +70,20 @@ function WorkoutHeatmap({ theme, exerciseHistory }) {
       ))}
     </div>
   )
+}
+
+// Same apple_exercise_time-based "active day" signal STREAK already uses (useHealthData.js,
+// via the shared buildExerciseHistory() helper) — not a separate in-app workout log.
+function WorkoutHeatmap({ theme, exerciseHistory }) {
+  return <ActivityHeatmap theme={theme} history={exerciseHistory} label="Consistency" activeColor={theme.accent} />
+}
+
+// Real per-session Yoga/Flexibility HealthKit workouts (buildFlexibilityHistory(), sourced
+// from health-data.json's `workouts` array — confirmed as genuine type-level data, not an
+// inferred signal, before this was built). Reuses TYPE_PILL.flexibility's teal so this heatmap
+// reads as the same "flexibility" category as the training-plan type pill elsewhere in the app.
+function FlexibilityHeatmap({ theme, flexibilityHistory }) {
+  return <ActivityHeatmap theme={theme} history={flexibilityHistory} label="Flexibility" activeColor={TYPE_PILL.flexibility.color} />
 }
 
 function SlimSleepSparkline({ sleepLast7, theme }) {
@@ -108,7 +124,7 @@ function SlimSleepSparkline({ sleepLast7, theme }) {
   )
 }
 
-export default function WeeklySummary({ weekSummary, theme, streak, exerciseHistory }) {
+export default function WeeklySummary({ weekSummary, theme, streak, exerciseHistory, flexibilityHistory }) {
   if (!weekSummary) {
     return (
       <div style={{ background: theme.cardBg, border: `0.5px solid ${theme.cardBorder}`, borderRadius: '10px', padding: '14px', transition: CARD_TRANSITION }}>
@@ -196,6 +212,7 @@ export default function WeeklySummary({ weekSummary, theme, streak, exerciseHist
       </div>
 
       <WorkoutHeatmap theme={theme} exerciseHistory={exerciseHistory} />
+      <FlexibilityHeatmap theme={theme} flexibilityHistory={flexibilityHistory} />
     </div>
   )
 }

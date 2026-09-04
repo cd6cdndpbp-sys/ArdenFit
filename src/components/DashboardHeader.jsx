@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useCrossfadeLayers } from '../hooks/useCrossfadeLayers'
+import { freshnessLevel, formatSyncAge } from '../utils/dataFreshness'
 
 const ARDEN_IMAGES = {
-  rest:           'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS3.png',
-  ready:          'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS1.png',
-  pr:             'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS2.png',
-  full_intensity: 'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS4.png',
-  low_sleep:      'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS5.png',
-  overtraining:   'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS6.png',
+  rest:             'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS3.png',
+  ready:            'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS1.png',
+  pr:               'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS2.png',
+  full_intensity:   'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS4.png',
+  low_sleep:        'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS5.png',
+  overtraining:     'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS6.png',
+  off_baseline:     'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS7.png',
+  streak_milestone: 'https://raw.githubusercontent.com/cd6cdndpbp-sys/ArdenFit/main/images/AS8.png',
 }
 
 const dataPillStyle = (theme) => ({
@@ -58,6 +61,10 @@ export default function DashboardHeader({
   const hrv        = healthData?.hrv
   const restingHR  = healthData?.restingHR
   const sleepColor = sleep >= 7 ? theme.badgeGood.color : sleep >= 6 ? theme.textPrimary : theme.badgeWarn.color
+
+  const SYNC_BADGE = { good: theme.badgeGood, warn: theme.badgeWarn, critical: theme.badgeCritical }
+  const syncDotColor = SYNC_BADGE[freshnessLevel(healthData?.dataLastUpdated)].color
+  const syncAgeLabel = formatSyncAge(healthData?.dataLastUpdated)
 
   return (
     <header
@@ -128,6 +135,12 @@ export default function DashboardHeader({
             <span style={{ color: theme.sparklineHR }}>{restingHR} bpm</span>
           </div>
         )}
+        <div style={dataPillStyle(theme)} title={syncAgeLabel}>
+          <span style={{
+            width: '7px', height: '7px', borderRadius: '50%',
+            background: syncDotColor, transition: 'background-color 1.5s ease',
+          }} />
+        </div>
       </div>
 
       {/* Arden — height controlled by .arden-img CSS class, crossfades on state change */}

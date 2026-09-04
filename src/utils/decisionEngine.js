@@ -1,4 +1,5 @@
 import { getTodaysPlan } from './trainingPlan'
+import { crossedStreakMilestoneToday } from './exerciseHistory'
 
 export function runDecisionEngine(healthData) {
   if (!healthData) return null
@@ -72,23 +73,29 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 4. ELEVATED RESTING HR — 10%+ above 7-day baseline
+  // 4. ELEVATED RESTING HR — 10%+ above 7-day baseline (same threshold as MetricCards.jsx's
+  // own RESTING HR "ELEVATED" badge, not a separately invented number). Maps to off_baseline,
+  // not overtraining: this check is only ever reached when #2's POOR_SLEEP_STREAK was false
+  // (the function already returned above if it were true), so a standalone elevated reading
+  // — with no corroborating sign of accumulated training-load fatigue — reads as "something's
+  // off" rather than confirmed overtraining. overtraining stays reserved for the sustained,
+  // multi-night signal in #2, which wins by construction whenever both are true.
   const restingHR  = healthData.restingHR ?? null
   const hrBaseline = healthData.hrSevenDayAvg ?? healthData.weekSummary?.hrSevenDayAvg ?? null
   if (restingHR != null && hrBaseline != null && hrBaseline > 0) {
     const elevatedPct = ((restingHR - hrBaseline) / hrBaseline) * 100
     if (elevatedPct >= 10) {
       const subtitles = [
-        `Resting HR ${Math.round(elevatedPct)}% above baseline. Active recovery today.`,
-        `HR is up ${Math.round(elevatedPct)}%. Your body is asking for a break.`,
-        `Elevated resting HR again. Back off today.`,
-        `${Math.round(elevatedPct)}% above your 7-day average HR. Recovery, not a hard session.`,
+        `Resting HR ${Math.round(elevatedPct)}% above baseline. Worth keeping an eye on.`,
+        `HR is up ${Math.round(elevatedPct)}% from baseline. Could be stress, heat, or just an off day.`,
+        `Resting HR's off baseline today. Not a training-load thing necessarily — just noting it.`,
+        `${Math.round(elevatedPct)}% above your 7-day average HR. Something's off — go easier today.`,
       ]
       return {
-        ardenState: 'overtraining',
-        intensity:  3,
+        ardenState: 'off_baseline',
+        intensity:  4,
         flags:      ['ELEVATED_HR'],
-        reasons:    [`Resting HR ${Math.round(elevatedPct)}% above 7-day baseline — active recovery only.`],
+        reasons:    [`Resting HR ${Math.round(elevatedPct)}% above 7-day baseline — off baseline, not confirmed overtraining.`],
         subtitle:   subtitles[idx],
       }
     }
@@ -117,7 +124,29 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 6. REST DAY
+  // 6. STREAK MILESTONE — a just-crossed 7/14/30-day streak. Checked after every recovery/
+  // safety signal above (celebrating a milestone shouldn't override a genuine "you need rest"
+  // message) but before the routine rest-day/workout-complete states below, since this is a
+  // rare, once-a-day-at-most event worth surfacing over the everyday messaging. Same edge-
+  // trigger function drives the confetti call in Home.jsx — one check, not two.
+  const crossedMilestone = crossedStreakMilestoneToday(healthData.exerciseHistory)
+  if (crossedMilestone != null) {
+    const subtitles = [
+      `${crossedMilestone} days in a row. That's not luck, that's a pattern.`,
+      `${crossedMilestone}-day streak. Consistency is compounding.`,
+      `${crossedMilestone} days straight. This is what it looks like when it's working.`,
+      `${crossedMilestone} in a row — the habit is holding.`,
+    ]
+    return {
+      ardenState: 'streak_milestone',
+      intensity:  8,
+      flags:      ['STREAK_MILESTONE'],
+      reasons:    [`${crossedMilestone}-day streak just reached — first time hitting this milestone.`],
+      subtitle:   subtitles[idx],
+    }
+  }
+
+  // 7. REST DAY
   if (todayPlan?.type === 'rest') {
     const subtitles = [
       "Rest day. Recovery is part of the plan.",
@@ -134,7 +163,7 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 7. WORKOUT COMPLETE
+  // 8. WORKOUT COMPLETE
   if (todayComplete) {
     const subtitles = [
       "Workout logged. That's what consistency looks like.",
@@ -152,7 +181,7 @@ export function runDecisionEngine(healthData) {
     }
   }
 
-  // 8. DEFAULT — ready to train
+  // 9. DEFAULT — ready to train
   const subtitles = [
     "Let's get after it.",
     "Data looks good. Your move.",

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { ACTIVE_DAY_MIN_MINUTES, WORKOUT_COMPLETE_MIN_MINUTES, buildExerciseHistory } from '../utils/exerciseHistory'
+import { WORKOUT_COMPLETE_MIN_MINUTES, buildExerciseHistory, currentStreak } from '../utils/exerciseHistory'
+import { buildFlexibilityHistory } from '../utils/flexibilityHistory'
 
 const matchesLocalDay = (recordDate, targetDateStr) =>
   recordDate ? recordDate.split(' ')[0] === targetDateStr : false
@@ -16,6 +17,7 @@ const useHealthData = () => {
           : 'http://192.168.1.221:3001/api/health'
         const res = await fetch(API_URL)
         const json = await res.json()
+        const dataLastUpdated = json._meta?.lastUpdated ?? null
         const metrics = json.data?.metrics || []
         const workouts = json.data?.workouts || []
         const _wm = metrics.find(m => m.name === 'weight_body_mass')
@@ -95,16 +97,9 @@ const useHealthData = () => {
         // than enough range for streak, which only ever needs to look as far back as
         // whatever the current streak itself runs.
         const exerciseHistory = buildExerciseHistory(exerciseMinutes, 42)
-
-        let streak = 0
-        const todayMins = exerciseHistory.find(d => d.date === today)?.mins || 0
-        let startIndex = todayMins >= ACTIVE_DAY_MIN_MINUTES
-          ? exerciseHistory.length - 1
-          : exerciseHistory.length - 2
-        for (let i = startIndex; i >= 0; i--) {
-          if (exerciseHistory[i].active) streak++
-          else break
-        }
+        const streak = currentStreak(exerciseHistory)
+        // Same 42-day window as exerciseHistory — both feed the 6-week heatmap grid.
+        const flexibilityHistory = buildFlexibilityHistory(workouts, 42)
 
         const respiratoryRate = getMetric('respiratory_rate')
         const respiratoryRateValue = respiratoryRate?.data
@@ -145,11 +140,21 @@ const useHealthData = () => {
           weight:      weightByDay.get(date)?.qty  != null ? Math.round(weightByDay.get(date).qty  * 10) / 10 : null,
           bodyFatPct:  bodyFatByDay.get(date)?.qty != null ? Math.round(bodyFatByDay.get(date).qty * 10) / 10 : null,
         }))
-        // Single source for "current weight" — the most recent bodyCompHistory day that
-        // actually has a weight reading (not necessarily the literal last day, which could
-        // be a body-fat-only reading), rather than a second, independent lookup into the raw
-        // weight array that could disagree with bodyCompHistory's own last point.
-        const latestWeight = [...bodyCompHistory].reverse().find(d => d.weight != null)?.weight ?? null
+        // Single source for both "current weight" and "current body fat %" — the most
+        // recent bodyCompHistory day that actually has a reading for that field (not
+        // necessarily the literal last day, which could be weight-only or body-fat-only),
+        // rather than a second, independent lookup into the raw metric arrays that could
+        // disagree with bodyCompHistory's own last point.
+        const latestFieldValue = (field) =>
+          [...bodyCompHistory].reverse().find(d => d[field] != null)?.[field] ?? null
+        const latestWeight      = latestFieldValue('weight')
+        const currentBodyFatPct = latestFieldValue('bodyFatPct')
+        // Last 7 non-null readings, same "flat number array" shape hrvTrend/hrTrend already
+        // use for the Sparkline component — derived here once, not re-derived in the card.
+        const bodyFatTrend = bodyCompHistory
+          .filter(d => d.bodyFatPct != null)
+          .slice(-7)
+          .map(d => d.bodyFatPct)
 
         // ── 7-DAY SUMMARY ────────────────────────────────────────
 
@@ -287,6 +292,7 @@ const useHealthData = () => {
           todayWorkoutComplete: exerciseToday >= WORKOUT_COMPLETE_MIN_MINUTES,
           exerciseLast7,
           exerciseHistory,
+          flexibilityHistory,
           streak,
           respiratoryRate: respiratoryRateValue ? Math.round(respiratoryRateValue * 10) / 10 : null,
           respiratoryTrend,
@@ -295,6 +301,9 @@ const useHealthData = () => {
           distanceLast7,
           avgPaceMinPerMile,
           currentWeight: latestWeight,
+          currentBodyFatPct,
+          dataLastUpdated,
+          bodyFatTrend,
           bodyCompHistory,
           workoutsThisWeek,
           weekSummary: {

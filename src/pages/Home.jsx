@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import confetti from 'canvas-confetti'
 import DashboardHeader from '../components/DashboardHeader'
 import MetricCards from '../components/MetricCards'
 import TrainingPlanCard from '../components/TrainingPlanCard'
@@ -7,11 +9,26 @@ import useHealthData from '../hooks/useHealthData'
 import useTheme from '../hooks/useTheme'
 import { runDecisionEngine } from '../utils/decisionEngine'
 import { getTodaysPlan, getWeekPlan } from '../utils/trainingPlan'
+import { crossedStreakMilestoneToday } from '../utils/exerciseHistory'
 
 function Home() {
   const { healthData, loading } = useHealthData()
   const theme = useTheme()
   const decision = runDecisionEngine(healthData)
+
+  // Same crossedStreakMilestoneToday() call decisionEngine.js uses to pick the
+  // streak_milestone Arden state — one detection driving both, not a second check that could
+  // disagree with it. Guarded by a ref (not localStorage) so it fires once per unique
+  // milestone per session rather than every 5-minute health-data poll while the day's
+  // milestone state persists.
+  const celebratedMilestoneRef = useRef(null)
+  useEffect(() => {
+    const milestone = crossedStreakMilestoneToday(healthData?.exerciseHistory)
+    if (milestone != null && celebratedMilestoneRef.current !== milestone) {
+      celebratedMilestoneRef.current = milestone
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.3 } })
+    }
+  }, [healthData?.exerciseHistory])
 
   const todaysPlan  = getTodaysPlan()
 
@@ -54,6 +71,7 @@ function Home() {
               theme={theme}
               streak={healthData?.streak}
               exerciseHistory={healthData?.exerciseHistory}
+              flexibilityHistory={healthData?.flexibilityHistory}
             />
           </div>
         </div>

@@ -32,3 +32,38 @@ export function buildExerciseHistory(exerciseMinutesMetric, days) {
   }
   return history
 }
+
+// Consecutive `active` days walking backward from `endIndex` (inclusive).
+function consecutiveActiveDaysEndingAt(exerciseHistory, endIndex) {
+  let streak = 0
+  for (let i = endIndex; i >= 0; i--) {
+    if (exerciseHistory[i].active) streak++
+    else break
+  }
+  return streak
+}
+
+// Current streak as of the last entry in exerciseHistory ("today") — today's own entry is
+// skipped if it hasn't cleared the active-day threshold YET (the day isn't over), so a
+// still-in-progress day doesn't prematurely break an otherwise-intact streak.
+export function currentStreak(exerciseHistory) {
+  if (!exerciseHistory?.length) return 0
+  const lastIndex = exerciseHistory.length - 1
+  const todayCountsYet = exerciseHistory[lastIndex].active
+  return consecutiveActiveDaysEndingAt(exerciseHistory, todayCountsYet ? lastIndex : lastIndex - 1)
+}
+
+export const STREAK_MILESTONES = [7, 14, 30]
+
+// Returns the milestone (7/14/30) today's streak just crossed that yesterday's streak
+// hadn't reached — not "is at or above" (which would re-fire every day after crossing) —
+// or null if none was crossed today. Stateless: recomputes yesterday's streak from the same
+// exerciseHistory array instead of persisting a "last seen streak" value, so it can't drift
+// or miss a crossing due to a stale read. The same result drives both the streak_milestone
+// Arden state (decisionEngine.js) and the confetti trigger — one check, not two.
+export function crossedStreakMilestoneToday(exerciseHistory) {
+  if (!exerciseHistory || exerciseHistory.length < 2) return null
+  const todayStreak     = currentStreak(exerciseHistory)
+  const yesterdayStreak = consecutiveActiveDaysEndingAt(exerciseHistory, exerciseHistory.length - 2)
+  return STREAK_MILESTONES.find(m => todayStreak >= m && yesterdayStreak < m) ?? null
+}

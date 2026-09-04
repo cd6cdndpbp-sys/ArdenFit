@@ -159,6 +159,23 @@ function HRCard({ restingHR, hrTrend, hrSevenDayAvg, theme }) {
   )
 }
 
+// No good/normal/warn badge here — unlike steps/HRV/resting HR, there's no established
+// target or baseline for body fat % anywhere in the app to judge the reading against, so
+// this card shows the reading plainly rather than inventing a threshold.
+function BodyFatCard({ bodyFatPct, bodyFatTrend, theme }) {
+  const trend = bodyFatTrend?.length ? bodyFatTrend : []
+  return (
+    <div style={cardStyle(theme)}>
+      <div>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textSecondary, letterSpacing: '0.04em' }}>BODY FAT</div>
+        <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>Latest reading</div>
+      </div>
+      <div style={{ ...valueStyle, color: theme.textPrimary }}>{bodyFatPct != null ? `${bodyFatPct}%` : '--'}</div>
+      {trend.length > 1 && <Sparkline values={trend} color={theme.sparklineHRV} />}
+    </div>
+  )
+}
+
 export default function MetricCards({ healthData, theme }) {
   return (
     <div className="metric-cards-grid" style={{
@@ -174,6 +191,11 @@ export default function MetricCards({ healthData, theme }) {
         restingHR={healthData?.restingHR}
         hrTrend={healthData?.hrTrend}
         hrSevenDayAvg={healthData?.hrSevenDayAvg}
+        theme={theme}
+      />
+      <BodyFatCard
+        bodyFatPct={healthData?.currentBodyFatPct}
+        bodyFatTrend={healthData?.bodyFatTrend}
         theme={theme}
       />
     </div>
