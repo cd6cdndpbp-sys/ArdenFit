@@ -8,11 +8,22 @@ const DAY_LETTERS   = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const localDateStr = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-// Shared grid renderer for any binary daily-activity history ({ date, active }[]) — used for
-// both the exercise-consistency heatmap and the flexibility-session heatmap below, which are
-// visually identical apart from which history/color they read.
-function ActivityHeatmap({ theme, history, label, activeColor }) {
-  const byDate = new Map((history ?? []).map(d => [d.date, d.active]))
+function LegendSwatch({ color, label, theme }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: theme.textMuted }}>
+      <span style={{ width: '6px', height: '6px', borderRadius: '2px', background: color }} />
+      {label}
+    </span>
+  )
+}
+
+// One grid, two independently-sourced binary daily-activity signals (workout consistency —
+// apple_exercise_time via buildExerciseHistory() — and flexibility sessions — real Yoga/
+// Flexibility HealthKit workouts via buildFlexibilityHistory()). Each day cell splits into a
+// top half (workout) and bottom half (flexibility), both still one rounded shape.
+function CombinedActivityHeatmap({ theme, exerciseHistory, flexibilityHistory, workoutColor, flexColor }) {
+  const workoutByDate = new Map((exerciseHistory ?? []).map(d => [d.date, d.active]))
+  const flexByDate    = new Map((flexibilityHistory ?? []).map(d => [d.date, d.active]))
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -31,17 +42,27 @@ function ActivityHeatmap({ theme, history, label, activeColor }) {
   )
 
   const cellInfo = (date) => {
-    if (date > today) return { color: 'transparent', label: 'upcoming' }
+    if (date > today) return { workoutActive: false, flexActive: false, label: 'upcoming' }
     const dateStr = localDateStr(date)
-    return byDate.get(dateStr)
-      ? { color: activeColor, label: 'active day' }
-      : { color: theme.cardBorder, label: 'no meaningful activity' }
+    const workoutActive = !!workoutByDate.get(dateStr)
+    const flexActive    = !!flexByDate.get(dateStr)
+    return {
+      workoutActive,
+      flexActive,
+      label: `workout ${workoutActive ? '✓' : '—'}, flexibility ${flexActive ? '✓' : '—'}`,
+    }
   }
 
   return (
     <div style={{ marginTop: '12px' }}>
-      <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-        {label} — last {HEATMAP_WEEKS} weeks
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+        <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Activity — last {HEATMAP_WEEKS} weeks
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <LegendSwatch color={workoutColor} label="Workout" theme={theme} />
+          <LegendSwatch color={flexColor} label="Flexibility" theme={theme} />
+        </div>
       </div>
       <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
         {DAY_LETTERS.map((letter, i) => (
@@ -53,37 +74,28 @@ function ActivityHeatmap({ theme, history, label, activeColor }) {
       {weeks.map((days, wi) => (
         <div key={wi} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
           {days.map((date, di) => {
-            const { color, label: cellLabel } = cellInfo(date)
+            const isUpcoming = date > today
+            const { workoutActive, flexActive, label: cellLabel } = cellInfo(date)
+            const topColor = isUpcoming ? 'transparent' : workoutActive ? workoutColor : theme.cardBorder
+            const botColor = isUpcoming ? 'transparent' : flexActive    ? flexColor    : theme.cardBorder
             return (
               <div
                 key={di}
                 title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${cellLabel}`}
                 style={{
-                  flex: 1, height: '14px', borderRadius: '3px',
-                  background: color,
-                  transition: 'background-color 1.5s ease',
+                  flex: 1, height: '14px', borderRadius: '3px', overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', gap: '1px',
                 }}
-              />
+              >
+                <div style={{ flex: 1, background: topColor, transition: 'background-color 1.5s ease' }} />
+                <div style={{ flex: 1, background: botColor, transition: 'background-color 1.5s ease' }} />
+              </div>
             )
           })}
         </div>
       ))}
     </div>
   )
-}
-
-// Same apple_exercise_time-based "active day" signal STREAK already uses (useHealthData.js,
-// via the shared buildExerciseHistory() helper) — not a separate in-app workout log.
-function WorkoutHeatmap({ theme, exerciseHistory }) {
-  return <ActivityHeatmap theme={theme} history={exerciseHistory} label="Consistency" activeColor={theme.accent} />
-}
-
-// Real per-session Yoga/Flexibility HealthKit workouts (buildFlexibilityHistory(), sourced
-// from health-data.json's `workouts` array — confirmed as genuine type-level data, not an
-// inferred signal, before this was built). Reuses TYPE_PILL.flexibility's teal so this heatmap
-// reads as the same "flexibility" category as the training-plan type pill elsewhere in the app.
-function FlexibilityHeatmap({ theme, flexibilityHistory }) {
-  return <ActivityHeatmap theme={theme} history={flexibilityHistory} label="Flexibility" activeColor={TYPE_PILL.flexibility.color} />
 }
 
 function SlimSleepSparkline({ sleepLast7, theme }) {
@@ -211,8 +223,13 @@ export default function WeeklySummary({ weekSummary, theme, streak, exerciseHist
         <SlimSleepSparkline sleepLast7={sleepLast7} theme={theme} />
       </div>
 
-      <WorkoutHeatmap theme={theme} exerciseHistory={exerciseHistory} />
-      <FlexibilityHeatmap theme={theme} flexibilityHistory={flexibilityHistory} />
+      <CombinedActivityHeatmap
+        theme={theme}
+        exerciseHistory={exerciseHistory}
+        flexibilityHistory={flexibilityHistory}
+        workoutColor={theme.accent}
+        flexColor={TYPE_PILL.flexibility.color}
+      />
     </div>
   )
 }
