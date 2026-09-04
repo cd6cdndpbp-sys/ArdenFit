@@ -48,33 +48,31 @@ function WorkoutHeatmap({ theme }) {
       <div style={{ fontSize: '10px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
         Consistency — last {HEATMAP_WEEKS} weeks
       </div>
-      <div style={{ display: 'inline-block' }}>
-        <div style={{ display: 'flex', gap: '3px', marginBottom: '3px' }}>
-          {DAY_LETTERS.map((letter, i) => (
-            <div key={i} style={{ width: '13px', fontSize: '8px', color: theme.textMuted, textAlign: 'center' }}>
-              {letter}
-            </div>
-          ))}
-        </div>
-        {weeks.map((days, wi) => (
-          <div key={wi} style={{ display: 'flex', gap: '3px', marginBottom: '3px' }}>
-            {days.map((date, di) => {
-              const { color, label } = cellInfo(date)
-              return (
-                <div
-                  key={di}
-                  title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${label}`}
-                  style={{
-                    width: '13px', height: '13px', borderRadius: '3px',
-                    background: color,
-                    transition: 'background-color 1.5s ease',
-                  }}
-                />
-              )
-            })}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+        {DAY_LETTERS.map((letter, i) => (
+          <div key={i} style={{ flex: 1, fontSize: '8px', color: theme.textMuted, textAlign: 'center' }}>
+            {letter}
           </div>
         ))}
       </div>
+      {weeks.map((days, wi) => (
+        <div key={wi} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+          {days.map((date, di) => {
+            const { color, label } = cellInfo(date)
+            return (
+              <div
+                key={di}
+                title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${label}`}
+                style={{
+                  flex: 1, height: '14px', borderRadius: '3px',
+                  background: color,
+                  transition: 'background-color 1.5s ease',
+                }}
+              />
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 }
