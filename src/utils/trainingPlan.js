@@ -1,8 +1,6 @@
-const PLAN_START = '2026-05-29'
-
-export const CALORIE_MIN  = 1600
-export const CALORIE_MAX  = 1700
-export const PROTEIN_MIN  = 120
+const CALORIE_MIN  = 1600
+const CALORIE_MAX  = 1700
+const PROTEIN_MIN  = 120
 
 function fmtLocalDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -175,4 +173,4 @@ export function getWeightTarget(currentWeight) {
   }
 }
 
-export { PHASES, PLAN_START }
+export { PHASES }
