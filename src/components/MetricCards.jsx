@@ -11,7 +11,7 @@ const cardStyle = (theme) => ({
   background:   theme.cardBg,
   border:       `0.5px solid ${theme.cardBorder}`,
   borderRadius: '10px',
-  padding:      '12px 14px',
+  padding:      '12px 14px 8px',
   transition:   CARD_TRANSITION,
 })
 
@@ -104,7 +104,6 @@ function BodyFatCard({ bodyFatPct, theme }) {
     <div style={cardStyle(theme)}>
       <div>
         <div style={{ fontSize: '11px', fontWeight: 600, color: theme.textSecondary, letterSpacing: '0.04em' }}>BODY FAT</div>
-        <div style={{ fontSize: '11px', color: theme.textMuted, marginTop: '1px' }}>Latest reading</div>
       </div>
       <div style={{ ...valueStyle, color: theme.textPrimary }}>{bodyFatPct != null ? `${bodyFatPct}%` : '--'}</div>
     </div>
