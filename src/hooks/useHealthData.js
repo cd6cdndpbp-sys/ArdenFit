@@ -17,7 +17,6 @@ const useHealthData = () => {
           : 'http://192.168.1.221:3001/api/health'
         const res = await fetch(API_URL)
         const json = await res.json()
-        const dataLastUpdated = json._meta?.lastUpdated ?? null
         const metrics = json.data?.metrics || []
         const workouts = json.data?.workouts || []
         const _wm = metrics.find(m => m.name === 'weight_body_mass')
@@ -149,12 +148,6 @@ const useHealthData = () => {
           [...bodyCompHistory].reverse().find(d => d[field] != null)?.[field] ?? null
         const latestWeight      = latestFieldValue('weight')
         const currentBodyFatPct = latestFieldValue('bodyFatPct')
-        // Last 7 non-null readings, same "flat number array" shape hrvTrend/hrTrend already
-        // use for the Sparkline component — derived here once, not re-derived in the card.
-        const bodyFatTrend = bodyCompHistory
-          .filter(d => d.bodyFatPct != null)
-          .slice(-7)
-          .map(d => d.bodyFatPct)
 
         // ── 7-DAY SUMMARY ────────────────────────────────────────
 
@@ -302,8 +295,6 @@ const useHealthData = () => {
           avgPaceMinPerMile,
           currentWeight: latestWeight,
           currentBodyFatPct,
-          dataLastUpdated,
-          bodyFatTrend,
           bodyCompHistory,
           workoutsThisWeek,
           weekSummary: {

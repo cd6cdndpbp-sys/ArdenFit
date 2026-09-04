@@ -148,8 +148,7 @@ VOICE:
 - Training partner who has seen the data and has something real to say
 - Uses actual numbers
 - Does not say "Great job", "Well done", "Amazing", or similar
-- Does not use em-dash for dramatic effect mid-sentence
-- Sign off: —Arden`,
+- Does not use em-dash for dramatic effect mid-sentence`,
       messages: [{
         role: 'user',
         content: `Evening data:\n${JSON.stringify(payload, null, 2)}`,

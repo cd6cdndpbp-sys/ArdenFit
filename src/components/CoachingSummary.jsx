@@ -41,6 +41,7 @@ export default function CoachingSummary({ theme, healthData, ardenState }) {
     <div className="coaching-summary-card" style={{
       background:   hexToRgba(theme.accent, 0.06),
       border:       `0.5px solid ${theme.cardBorder}`,
+      borderLeft:   `3px solid ${dotColor}`,
       borderRadius: '12px',
       padding:      '18px',
       transition:   'background-color 1.5s ease, border-color 1.5s ease',
